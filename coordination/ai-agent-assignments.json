@@ -1,0 +1,136 @@
+{
+  "project": "WeirdBrains",
+  "coordinator": "project-nexus",
+  "last_updated": "2024-06-11",
+  "agent_hierarchy": {
+    "master_coordinator": {
+      "name": "Master Coordinator Agent",
+      "repository": "project-nexus",
+      "workspace_path": "~/Desktop/Code/WeirdBrains/repositories/project-nexus/",
+      "role": "Master orchestrator and cross-repo coordinator",
+      "responsibilities": [
+        "Cross-repository task coordination",
+        "AI agent orchestration and task distribution", 
+        "Deployment sequence management",
+        "Documentation hub maintenance",
+        "Master task management and progress tracking",
+        "Branch coordination across repositories"
+      ],
+      "access_level": "all_repositories",
+      "coordination_tasks": [
+        "Monitor progress across all repositories",
+        "Distribute tasks to specialized agents",
+        "Coordinate cross-repo dependencies",
+        "Manage deployment sequences",
+        "Maintain central documentation",
+        "Resolve cross-repo conflicts"
+      ]
+    },
+    "specialized_agents": {
+      "frontend_agent": {
+        "name": "Mobile App Development Agent",
+        "workspace": "mobile-app",
+        "workspace_path": "~/Desktop/Code/WeirdBrains/workspaces/mobile-app/",
+        "repositories": ["mandible", "accounts"],
+        "focus_areas": [
+          "Flutter frontend development",
+          "UI/UX improvements",
+          "Mobile optimization",
+          "Frontend performance",
+          "User experience enhancements"
+        ],
+        "coordination_with": ["backend_agent", "auth_agent"],
+        "reports_to": "master_coordinator"
+      },
+      "backend_agent": {
+        "name": "Backend API Development Agent", 
+        "workspace": "auth-system",
+        "workspace_path": "~/Desktop/Code/WeirdBrains/workspaces/auth-system/",
+        "repositories": ["sso_backend", "accounts"],
+        "focus_areas": [
+          "Authentication system development",
+          "User management and accounts",
+          "API endpoint development",
+          "Database optimization",
+          "Security implementations"
+        ],
+        "coordination_with": ["frontend_agent", "fullstack_agent"],
+        "reports_to": "master_coordinator"
+      },
+      "fullstack_agent": {
+        "name": "Full Stack Integration Agent",
+        "workspace": "full-stack", 
+        "workspace_path": "~/Desktop/Code/WeirdBrains/workspaces/full-stack/",
+        "repositories": ["mandible", "backend", "sso_backend", "accounts", "project-nexus"],
+        "focus_areas": [
+          "End-to-end feature development",
+          "Cross-repository integration",
+          "System-wide coordination",
+          "Integration testing",
+          "Cross-service communication"
+        ],
+        "coordination_with": ["frontend_agent", "backend_agent", "ai_pipeline_agent"],
+        "reports_to": "master_coordinator"
+      },
+      "ai_pipeline_agent": {
+        "name": "AI Pipeline Development Agent",
+        "workspace": "ai-pipeline",
+        "workspace_path": "~/Desktop/Code/WeirdBrains/workspaces/ai-pipeline/",
+        "repositories": ["moire", "backend", "accounts"],
+        "focus_areas": [
+          "AI/ML model development",
+          "Model integration with backend",
+          "Data processing pipelines",
+          "AI service optimization",
+          "Machine learning workflows"
+        ],
+        "coordination_with": ["backend_agent", "fullstack_agent"],
+        "reports_to": "master_coordinator"
+      }
+    }
+  },
+  "coordination_protocols": {
+    "task_distribution": {
+      "source": "master_coordinator",
+      "method": "task_assignment_through_project_nexus",
+      "frequency": "continuous",
+      "escalation": "master_coordinator_intervention"
+    },
+    "progress_reporting": {
+      "frequency": "per_task_completion",
+      "method": "update_master_tasks_json",
+      "consolidation": "master_coordinator_review"
+    },
+    "cross_repo_coordination": {
+      "method": "dependency_based_sequencing",
+      "conflict_resolution": "master_coordinator_arbitration",
+      "synchronization": "branch_coordination_through_project_nexus"
+    }
+  },
+  "workspace_configurations": {
+    "mobile-app": {
+      "primary_repositories": ["mandible", "accounts"],
+      "development_focus": "frontend",
+      "testing_scope": "ui_ux_integration",
+      "deployment_responsibility": "frontend_deployment"
+    },
+    "auth-system": {
+      "primary_repositories": ["sso_backend", "accounts"],
+      "development_focus": "authentication",
+      "testing_scope": "auth_integration",
+      "deployment_responsibility": "auth_services_deployment"
+    },
+    "full-stack": {
+      "primary_repositories": ["mandible", "backend", "sso_backend", "accounts", "project-nexus"],
+      "development_focus": "integration",
+      "testing_scope": "end_to_end",
+      "deployment_responsibility": "full_system_deployment"
+    },
+    "ai-pipeline": {
+      "primary_repositories": ["moire", "backend", "accounts"],
+      "development_focus": "ai_ml",
+      "testing_scope": "ai_integration",
+      "deployment_responsibility": "ai_services_deployment"
+    }
+  }
+}

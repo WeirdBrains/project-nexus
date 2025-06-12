@@ -1,0 +1,131 @@
+# Task ID: 15
+# Title: Comprehensive Testing & Documentation
+# Status: pending
+# Dependencies: 1, 2, 5, 13, 12
+# Priority: low
+# Description: Create thorough test coverage and documentation for all messaging system changes to ensure reliability and maintainability.
+# Details:
+1. Write unit tests for core messaging components:
+   - MessagesController
+   - PollingService
+   - ChatRepository
+   - Unread message tracking
+
+2. Create integration tests for critical flows:
+   - Message sending and persistence
+   - Chat deletion/hiding
+   - Unread message tracking
+   - Error recovery
+
+3. Implement end-to-end tests for key user scenarios:
+   - Send message → close app → reopen → verify message exists
+   - Delete chat → verify only hidden for current user
+   - Receive message → see unread badge → open chat → badge clears
+
+4. Document all API changes:
+```markdown
+## POST /chat/messages
+Sends a new message to a chat room.
+
+### Request Body
+```json
+{
+  "chatId": "string",
+  "senderId": "string",
+  "content": "string",
+  "contentType": "text|image|file"
+}
+```
+
+### Response
+```json
+{
+  "success": true,
+  "data": {
+    "id": "string",
+    "status": "sending|sent|delivered|failed",
+    "createdAt": "timestamp"
+  }
+}
+```
+```
+
+5. Create troubleshooting guide for common issues:
+   - Message sending failures
+   - Missing messages
+   - Unread count discrepancies
+   - Chat visibility problems
+
+6. Document database schema changes and migration steps
+7. Create performance benchmarks and monitoring guidelines
+
+# Test Strategy:
+1. Measure test coverage for all components
+2. Verify documentation accuracy with peer review
+3. Test troubleshooting guide with simulated issues
+4. Conduct user acceptance testing with internal team
+5. Verify all tests pass in CI/CD pipeline
+6. Test documentation clarity with developers not familiar with the codebase
+7. Create regression test suite for future changes
+
+# Subtasks:
+## 1. Unit Test Coverage per Component [pending]
+### Dependencies: None
+### Description: Develop and execute unit tests for each individual component to ensure all logic branches and edge cases are covered.
+### Details:
+Identify all components, write unit tests for each, and measure coverage to ensure completeness.
+
+## 2. Integration Tests for Flows [pending]
+### Dependencies: None
+### Description: Design and implement integration tests that validate the interaction between multiple components within key business flows.
+### Details:
+Map out critical flows, create integration tests to cover component interactions, and verify data consistency.
+
+## 3. End-to-End Scenario Tests [pending]
+### Dependencies: None
+### Description: Create end-to-end tests simulating real user scenarios to ensure the system works as expected from start to finish.
+### Details:
+Define user journeys, automate scenario tests, and validate system behavior across all layers.
+
+## 4. API Documentation [pending]
+### Dependencies: None
+### Description: Document all API endpoints, including usage examples, parameters, responses, and error codes, following best practices.
+### Details:
+Use OpenAPI spec files, provide clear structure, maintain consistency, and keep documentation up-to-date with code changes.
+
+## 5. Troubleshooting Guide Creation [pending]
+### Dependencies: None
+### Description: Develop a troubleshooting guide to help users and developers diagnose and resolve common issues.
+### Details:
+Document frequent problems, error messages, and step-by-step solutions, referencing logs and support resources.
+
+## 6. Schema/Migration Documentation [pending]
+### Dependencies: None
+### Description: Document the database schema and all migration steps, including rationale and rollback procedures.
+### Details:
+Provide diagrams, table definitions, migration scripts, and change history for database evolution.
+
+## 7. Performance Benchmarks [pending]
+### Dependencies: None
+### Description: Establish and document performance benchmarks for critical system operations and endpoints.
+### Details:
+Define key metrics, run load and stress tests, and record baseline performance data for future comparison.
+
+## 8. Regression Suite Setup [pending]
+### Dependencies: None
+### Description: Assemble and automate a regression test suite to ensure new changes do not break existing functionality.
+### Details:
+Select representative tests from unit, integration, and end-to-end suites; automate execution and reporting.
+
+## 9. Peer Review Process [pending]
+### Dependencies: None
+### Description: Establish a peer review process for all code, tests, and documentation to ensure quality and consistency.
+### Details:
+Define review criteria, assign reviewers, and track feedback and approvals for all deliverables.
+
+## 10. Continuous Improvement and Maintenance [pending]
+### Dependencies: None
+### Description: Set up a process for ongoing maintenance and improvement of tests, documentation, and benchmarks.
+### Details:
+Schedule regular reviews, update artifacts as the system evolves, and incorporate feedback from users and developers.
+

@@ -1,0 +1,164 @@
+# Task ID: 21
+# Title: Infrastructure Cost Analysis
+# Status: pending
+# Dependencies: 2
+# Priority: high
+# Description: Analyze current DigitalOcean infrastructure usage patterns, database utilization, and app resource consumption to identify cost optimization opportunities.
+# Details:
+## Implementation Plan
+
+### 1. Data Collection
+1. Use mandible-dev and mandible-prod MCP tools to gather metrics:
+```bash
+# Connect to production environment
+ssh user@mandible-prod-server
+
+# Collect database metrics
+pg_stat_statements_reset(); # Reset statistics
+# Wait for 24-48 hours to collect representative data
+psql -c "SELECT * FROM pg_stat_statements ORDER BY total_exec_time DESC LIMIT 50;" > db_query_stats.csv
+
+# Collect resource usage metrics
+docker stats --no-stream > container_stats.txt
+```
+
+2. Extract DigitalOcean billing data:
+   - Use DO API to pull detailed usage data
+   - Export last 3 months of billing history
+
+3. Collect application performance metrics:
+   - CPU/Memory usage by service
+   - Network I/O patterns
+   - Storage consumption growth rate
+
+### 2. Analysis
+1. Database optimization:
+   - Identify slow/expensive queries from pg_stat_statements
+   - Analyze index usage and missing indexes
+   - Review connection pooling configuration
+   - Examine query patterns for potential caching opportunities
+
+2. Infrastructure usage patterns:
+   - Map resource consumption to time of day/week
+   - Identify peak usage periods vs. idle periods
+   - Calculate average vs. peak resource utilization
+   - Determine if resources are over-provisioned
+
+3. Cost breakdown by service:
+   - Create spreadsheet with costs allocated by:
+     - Database (storage, compute)
+     - API servers
+     - Background workers
+     - Storage (S3/spaces)
+     - CDN/networking
+
+### 3. Optimization Recommendations
+1. Create detailed report with:
+   - Current cost breakdown
+   - Identified inefficiencies
+   - Specific optimization recommendations with estimated savings
+   - Implementation complexity assessment
+
+2. Prioritize recommendations by:
+   - Potential cost savings
+   - Implementation effort
+   - Risk assessment
+
+3. Specific areas to investigate:
+   - Right-sizing droplets/databases
+   - Reserved instances vs. on-demand pricing
+   - Autoscaling configuration improvements
+   - Database query optimization
+   - Caching strategy enhancements
+   - Storage lifecycle policies
+
+# Test Strategy:
+## Verification Strategy
+
+### 1. Baseline Measurement
+1. Document current infrastructure costs:
+   - Create spreadsheet with 3-month cost history
+   - Calculate average monthly cost by service
+   - Identify cost trends (increasing/decreasing)
+
+2. Establish performance baselines:
+   - Record current response times for key API endpoints
+   - Document database query performance metrics
+   - Measure resource utilization percentages
+
+### 2. Validation of Analysis
+1. Peer review of collected data:
+   - Have another engineer verify data collection methodology
+   - Confirm metrics are representative of normal usage
+   - Validate cost allocation calculations
+
+2. Test optimization hypotheses:
+   - For database optimizations, run EXPLAIN ANALYZE on proposed query changes
+   - For infrastructure changes, create test environment with proposed configurations
+   - Measure before/after metrics for each recommendation
+
+### 3. Implementation Verification
+1. Implement changes in staging environment first:
+   - Apply recommended optimizations to staging
+   - Monitor for 48-72 hours for stability issues
+   - Compare performance metrics to baseline
+
+2. Gradual production rollout:
+   - Implement low-risk optimizations first
+   - Monitor closely for performance regressions
+   - Document actual cost savings vs. projections
+
+3. Long-term monitoring:
+   - Create dashboard to track ongoing infrastructure costs
+   - Set up alerts for unexpected cost increases
+   - Schedule quarterly review of cost optimization opportunities
+
+# Subtasks:
+## 1. Metrics and Billing Data Collection [pending]
+### Dependencies: None
+### Description: Gather all relevant infrastructure metrics and billing data from cloud providers, internal monitoring tools, and financial systems.
+### Details:
+Identify data sources, set up data extraction processes, and ensure data completeness and accuracy for subsequent analysis.
+
+## 2. Database Performance and Usage Analysis [pending]
+### Dependencies: None
+### Description: Analyze database performance metrics and usage patterns to understand resource consumption and identify potential bottlenecks.
+### Details:
+Review query logs, storage utilization, throughput, latency, and scaling events to assess efficiency and demand.
+
+## 3. Infrastructure Resource Usage Mapping [pending]
+### Dependencies: None
+### Description: Map collected metrics to specific infrastructure resources, linking usage data to compute, storage, networking, and other components.
+### Details:
+Correlate resource IDs, tags, and service accounts to build a comprehensive usage inventory.
+
+## 4. Cost Allocation by Service [pending]
+### Dependencies: None
+### Description: Allocate infrastructure costs to individual services, teams, or projects based on usage mapping and billing data.
+### Details:
+Apply cost allocation models, such as proportional usage or tagging, to ensure accurate attribution.
+
+## 5. Inefficiency Identification [pending]
+### Dependencies: None
+### Description: Identify areas of inefficiency, such as underutilized resources, over-provisioned services, or redundant infrastructure.
+### Details:
+Use performance and cost data to flag anomalies, waste, and optimization opportunities.
+
+## 6. Optimization Recommendation Drafting [pending]
+### Dependencies: None
+### Description: Draft actionable recommendations for infrastructure optimization based on identified inefficiencies and best practices.
+### Details:
+Propose changes such as rightsizing, resource consolidation, or service migration to reduce costs and improve efficiency.
+
+## 7. Prioritization and Risk Assessment [pending]
+### Dependencies: None
+### Description: Prioritize optimization recommendations and assess associated risks, dependencies, and potential impact.
+### Details:
+Evaluate feasibility, cost savings, implementation complexity, and business risk for each recommendation.
+
+## 8. Reporting and Stakeholder Review [pending]
+### Dependencies: None
+### Description: Compile findings, recommendations, and risk assessments into a comprehensive report for review by stakeholders.
+### Details:
+Prepare visualizations, executive summaries, and facilitate review sessions to gather feedback and align on next steps.
+

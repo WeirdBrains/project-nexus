@@ -1,0 +1,248 @@
+{
+  "weirdbrainsEcosystem": {
+    "version": "1.0.0",
+    "lastUpdated": "2025-01-01T00:00:00Z",
+    "masterCoordinator": "project-nexus",
+    "repositories": {
+      "mandible": {
+        "type": "frontend",
+        "priority": 1,
+        "techStack": ["flutter", "riverpod", "dart"],
+        "dependencies": ["backend", "sso_backend", "accounts"],
+        "taskMasterStatus": "initialized",
+        "coordinationRole": "primary-ui",
+        "deploymentTarget": "mobile-web",
+        "agents": {
+          "primary": "factory-ai-frontend",
+          "secondary": "augment-agent"
+        }
+      },
+      "backend": {
+        "type": "api-service",
+        "priority": 1,
+        "techStack": ["dart-frog", "postgresql", "onesignal"],
+        "dependencies": ["sso_backend", "infrastructure"],
+        "taskMasterStatus": "needs-init",
+        "coordinationRole": "central-api",
+        "deploymentTarget": "kubernetes",
+        "agents": {
+          "primary": "factory-ai-backend",
+          "secondary": "augment-agent"
+        }
+      },
+      "sso_backend": {
+        "type": "auth-service",
+        "priority": 1,
+        "techStack": ["dart-frog", "postgresql"],
+        "dependencies": ["infrastructure"],
+        "taskMasterStatus": "needs-init",
+        "coordinationRole": "authentication-provider",
+        "deploymentTarget": "kubernetes",
+        "agents": {
+          "primary": "factory-ai-backend",
+          "secondary": "augment-agent"
+        }
+      },
+      "accounts": {
+        "type": "frontend",
+        "priority": 1,
+        "techStack": ["flutter"],
+        "dependencies": ["sso_backend", "sso_widgets"],
+        "taskMasterStatus": "needs-init",
+        "coordinationRole": "account-management",
+        "deploymentTarget": "web",
+        "agents": {
+          "primary": "factory-ai-frontend",
+          "secondary": "augment-agent"
+        }
+      },
+      "project-nexus": {
+        "type": "coordination",
+        "priority": 1,
+        "techStack": ["task-management", "ai-coordination"],
+        "dependencies": [],
+        "taskMasterStatus": "needs-init",
+        "coordinationRole": "master-coordinator",
+        "deploymentTarget": "management",
+        "agents": {
+          "primary": "human-developer",
+          "secondary": "augment-agent"
+        }
+      },
+      "infrastructure": {
+        "type": "devops",
+        "priority": 2,
+        "techStack": ["kubernetes", "terraform", "docker"],
+        "dependencies": [],
+        "taskMasterStatus": "needs-init",
+        "coordinationRole": "deployment-infrastructure",
+        "deploymentTarget": "cloud",
+        "agents": {
+          "primary": "factory-ai-backend",
+          "secondary": "human-developer"
+        }
+      },
+      "onesignal-mcp": {
+        "type": "integration",
+        "priority": 2,
+        "techStack": ["typescript", "mcp-protocol"],
+        "dependencies": [],
+        "taskMasterStatus": "needs-init",
+        "coordinationRole": "notification-integration",
+        "deploymentTarget": "service",
+        "agents": {
+          "primary": "augment-agent",
+          "secondary": "factory-ai-backend"
+        }
+      },
+      "moire": {
+        "type": "ai-service",
+        "priority": 3,
+        "techStack": ["ai-ml", "image-processing"],
+        "dependencies": ["backend"],
+        "taskMasterStatus": "needs-init",
+        "coordinationRole": "image-processing",
+        "deploymentTarget": "ai-service",
+        "agents": {
+          "primary": "factory-ai-backend",
+          "secondary": "augment-agent"
+        }
+      },
+      "sso_widgets": {
+        "type": "library",
+        "priority": 4,
+        "techStack": ["flutter", "widgets"],
+        "dependencies": [],
+        "taskMasterStatus": "needs-init",
+        "coordinationRole": "shared-components",
+        "deploymentTarget": "package",
+        "agents": {
+          "primary": "factory-ai-frontend",
+          "secondary": "augment-agent"
+        }
+      },
+      "soma": {
+        "type": "auth-service",
+        "priority": 3,
+        "techStack": ["modern-backend"],
+        "dependencies": ["infrastructure"],
+        "taskMasterStatus": "needs-init",
+        "coordinationRole": "next-gen-sso",
+        "deploymentTarget": "kubernetes",
+        "agents": {
+          "primary": "factory-ai-backend",
+          "secondary": "human-developer"
+        }
+      }
+    },
+    "agentCapabilities": {
+      "factory-ai-backend": {
+        "repositories": ["backend", "sso_backend", "infrastructure", "moire", "soma"],
+        "technologies": ["dart-frog", "postgresql", "kubernetes", "docker", "api-design"],
+        "taskTypes": ["api-development", "database-design", "infrastructure", "backend-optimization"],
+        "maxConcurrentTasks": 5,
+        "performanceRating": 0.92
+      },
+      "factory-ai-frontend": {
+        "repositories": ["mandible", "accounts", "sso_widgets"],
+        "technologies": ["flutter", "riverpod", "ui-design", "state-management"],
+        "taskTypes": ["ui-development", "state-management", "user-experience", "mobile-optimization"],
+        "maxConcurrentTasks": 4,
+        "performanceRating": 0.88
+      },
+      "augment-agent": {
+        "repositories": ["all"],
+        "technologies": ["code-analysis", "optimization", "debugging", "performance"],
+        "taskTypes": ["code-review", "performance-optimization", "bug-fixing", "refactoring"],
+        "maxConcurrentTasks": 3,
+        "performanceRating": 0.95
+      },
+      "human-developer": {
+        "repositories": ["all"],
+        "technologies": ["architecture", "complex-integration", "strategic-planning"],
+        "taskTypes": ["system-design", "complex-features", "critical-decisions", "architecture"],
+        "maxConcurrentTasks": 2,
+        "performanceRating": 1.0
+      }
+    },
+    "crossRepoWorkflows": {
+      "authentication-flow": {
+        "description": "Complete user authentication implementation",
+        "repositories": ["sso_backend", "accounts", "mandible"],
+        "sequence": [
+          {"repo": "sso_backend", "tasks": ["auth-api", "token-management"]},
+          {"repo": "accounts", "tasks": ["login-ui", "registration-ui"]},
+          {"repo": "mandible", "tasks": ["auth-integration", "session-management"]}
+        ],
+        "estimatedDuration": "2 weeks",
+        "priority": "high"
+      },
+      "notification-system": {
+        "description": "End-to-end notification implementation",
+        "repositories": ["backend", "onesignal-mcp", "mandible"],
+        "sequence": [
+          {"repo": "onesignal-mcp", "tasks": ["mcp-integration", "notification-templates"]},
+          {"repo": "backend", "tasks": ["notification-api", "push-integration"]},
+          {"repo": "mandible", "tasks": ["notification-ui", "real-time-updates"]}
+        ],
+        "estimatedDuration": "1 week",
+        "priority": "medium"
+      },
+      "image-processing-pipeline": {
+        "description": "AI-powered image processing integration",
+        "repositories": ["moire", "backend", "mandible"],
+        "sequence": [
+          {"repo": "moire", "tasks": ["ai-model-integration", "processing-api"]},
+          {"repo": "backend", "tasks": ["image-upload-api", "processing-queue"]},
+          {"repo": "mandible", "tasks": ["image-upload-ui", "processing-status"]}
+        ],
+        "estimatedDuration": "3 weeks",
+        "priority": "medium"
+      }
+    },
+    "integrationPoints": {
+      "github": {
+        "enabled": true,
+        "syncDirection": "bidirectional",
+        "webhooks": ["issues", "pull_requests", "releases"],
+        "automations": ["task-creation", "status-sync", "label-mapping"]
+      },
+      "slack": {
+        "enabled": true,
+        "channels": {
+          "general": "#general",
+          "development": "#development",
+          "ai-agents": "#ai-agents",
+          "alerts": "#alerts"
+        },
+        "notifications": ["task-created", "task-completed", "conflicts", "weekly-reports"]
+      },
+      "sentry": {
+        "enabled": true,
+        "automations": ["error-to-task", "performance-alerts"],
+        "repositories": ["mandible", "backend", "sso_backend"]
+      },
+      "coderabbit": {
+        "enabled": true,
+        "automations": ["review-to-task", "suggestion-tracking"],
+        "repositories": ["all"]
+      }
+    },
+    "coordinationRules": {
+      "taskAssignment": {
+        "algorithm": "capability-based",
+        "factors": ["agent-expertise", "current-workload", "repository-familiarity"],
+        "fallback": "human-developer"
+      },
+      "conflictResolution": {
+        "strategy": "escalation",
+        "levels": ["auto-resolve", "agent-negotiation", "human-intervention"]
+      },
+      "dependencyManagement": {
+        "tracking": "automatic",
+        "validation": "pre-commit",
+        "resolution": "critical-path-optimization"
+      }
+    }
+  }
+}

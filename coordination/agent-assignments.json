@@ -1,0 +1,56 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-06-10T21:07:43-04:00",
+  "development_strategy": "parallel_development_and_reorganization",
+  "agents": {
+    "factory-ai-backend": {
+      "workspace": "auth-system",
+      "repositories": ["sso_backend", "accounts"],
+      "branch": "feature/task-master-integration",
+      "focus": "Authentication, user management, and backend services",
+      "working_directory": "WeirdBrains-v2/workspaces/auth-system/",
+      "priority_tasks": [
+        "SSO integration improvements",
+        "Account management features",
+        "Authentication security enhancements"
+      ]
+    },
+    "factory-ai-frontend": {
+      "workspace": "mobile-app",
+      "repositories": ["mandible", "accounts"],
+      "branch": "feature/task-master-integration", 
+      "focus": "Mobile app development, UI/UX, and frontend features",
+      "working_directory": "WeirdBrains-v2/workspaces/mobile-app/",
+      "priority_tasks": [
+        "Mobile app performance optimization",
+        "UI component improvements",
+        "Account integration features"
+      ]
+    },
+    "augment-agent": {
+      "workspace": "full-stack",
+      "repositories": ["mandible", "backend", "sso_backend", "accounts"],
+      "branch": "feature/task-master-integration",
+      "focus": "Full-stack coordination, integration, and system organization",
+      "working_directory": "WeirdBrains-v2/workspaces/full-stack/",
+      "priority_tasks": [
+        "Cross-repository coordination",
+        "System architecture improvements", 
+        "Integration testing and deployment"
+      ]
+    }
+  },
+  "workflow": {
+    "development_branch": "feature/task-master-integration",
+    "stable_branch": "main",
+    "deployment_branch": "production",
+    "merge_strategy": "feature -> main -> production",
+    "testing_strategy": "feature_branch_testing_then_integration"
+  },
+  "coordination": {
+    "task_master_location": "WeirdBrains-v2/coordination/project-nexus/",
+    "daily_sync": "agents_report_progress_via_task_master",
+    "integration_testing": "full_stack_workspace",
+    "deployment_coordination": "human_oversight_required"
+  }
+}

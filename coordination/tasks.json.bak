@@ -1,0 +1,1555 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Implement Message Status Tracking",
+      "description": "Add comprehensive message status tracking to provide users with clear feedback on message delivery status (sending, sent, delivered, failed).",
+      "details": "1. Modify the messages table schema to add status tracking fields:\n```sql\nALTER TABLE messages ADD COLUMN status VARCHAR(20) DEFAULT 'sent';\n```\n\n2. Update the message model in both frontend and backend to include status field\n3. Modify the MessagesController to track and update message status:\n   - 'sending': When message is being sent\n   - 'sent': When server acknowledges receipt\n   - 'delivered': When recipient has received the message\n   - 'failed': When message fails to send\n4. Implement UI indicators for message status in chat bubbles\n5. Add retry logic for failed messages with exponential backoff\n6. Create a background service to periodically retry failed messages\n\nPseudo-code for status updates:\n```dart\nclass MessageStatusService {\n  // Update message status\n  Future<void> updateMessageStatus(String messageId, String status) async {\n    try {\n      await _chatRepository.updateMessageStatus(messageId, status);\n      // Update local message object\n      final message = _findMessageById(messageId);\n      if (message != null) {\n        message.status = status;\n        notifyListeners();\n      }\n    } catch (e) {\n      // Log error but don't show to user\n      _logger.error('Failed to update message status', e);\n    }\n  }\n  \n  // Retry failed messages\n  Future<void> retryFailedMessages() async {\n    final failedMessages = _getFailedMessages();\n    for (final message in failedMessages) {\n      await _retryMessage(message);\n    }\n  }\n}\n```",
+      "testStrategy": "1. Unit test the message status update logic\n2. Verify database schema changes correctly store status information\n3. Test the retry mechanism with simulated network failures\n4. UI tests to verify status indicators appear correctly in the chat interface\n5. Test status transitions: sending → sent → delivered\n6. Test error recovery: sending → failed → retry → sent\n7. Verify status persistence across app restarts",
+      "priority": "high",
+      "dependencies": [],
+      "status": "done",
+      "subtasks": []
+    },
+    {
+      "id": 2,
+      "title": "Create Smart Polling Infrastructure",
+      "description": "Implement an intelligent polling system that adapts based on user activity, connection quality, and app state to provide real-time updates without excessive battery or network usage.",
+      "status": "done",
+      "dependencies": [
+        1
+      ],
+      "priority": "high",
+      "details": "## Implemented Components\n\n### 1. **Core Models & Enums**\n- `PollingContext` enum (activeChat, chatList, notifications, feed, userActivity)\n- `AppLifecycleState` enum (active, inactive, background, paused, detached)\n- `UserActivityLevel` enum (active, viewing, idle, unknown)\n- `NetworkQuality` enum (excellent, good, fair, poor, none)\n- `PollingConfig` class with adaptive interval calculation\n\n### 2. **Smart Polling Service**\n- `SmartPollingService` singleton with adaptive polling intervals\n- Network quality detection using connectivity_plus\n- App lifecycle awareness with automatic interval adjustment\n- Failure handling with automatic retry and circuit breaking\n- Configurable polling contexts with different priorities\n\n### 3. **User Activity Tracker**\n- `UserActivityTracker` with WidgetsBindingObserver integration\n- Automatic app lifecycle state detection\n- User activity level tracking with idle/active detection\n- Stream-based state broadcasting for reactive updates\n\n### 4. **Riverpod Integration**\n- Complete provider setup with proper lifecycle management\n- `SmartPollingInitializer` for app-wide initialization\n- Helper providers for recording user activity\n- Status providers for debugging and monitoring\n\n### 5. **Controller Integration**\n- Updated `MessagesController` to use smart polling instead of manual Timer\n- Updated `ChatController` to use smart polling for chat list updates\n- Updated `NotificationsController` to use smart polling for notifications updates\n\n### 6. **App Integration**\n- Integrated smart polling initialization in `MandibleApp`\n- Automatic startup when user is authenticated\n\n## Smart Features Implemented\n\n1. **Adaptive Intervals**: \n   - Active chat: 2-3s (when user active) → 30s (background)\n   - Chat list: 4-5s → 60s (background)\n   - Notifications: 8-10s → 120s (background)\n   - Ready for feed: 8-10s → 120s (background)\n\n2. **Network Awareness**: Automatically adjusts intervals based on WiFi/mobile/poor connection\n\n3. **App Lifecycle**: Reduces polling when app is backgrounded or user is idle\n\n4. **Failure Handling**: Disables polling after consecutive failures, prevents resource waste\n\n5. **Centralized Management**: Single service manages all polling contexts with unified configuration\n\n6. **Intelligent Updates**: Only triggers state updates when actual changes are detected (implemented for notifications)\n\n## Remaining Tasks\n\n1. Implement feed load time optimization instead of smart polling for feed updates\n2. Implement additional performance optimizations\n3. Add monitoring and analytics for polling behavior\n\n## Feed Optimization Decision\n\nAfter analysis, we've determined that smart polling for the feed is not cost-effective due to:\n- Low time sensitivity of feed content\n- Very high API call costs (60+ calls per poll)\n- Better alternatives exist (pull-to-refresh, app-resume refresh)\n\nInstead, we'll focus on feed load time optimization which will provide much better ROI.",
+      "testStrategy": "1. Unit test the SmartPollingService with different configurations\n2. Test the PollingConfig class with various input parameters\n3. Verify UserActivityTracker correctly detects user states\n4. Measure battery and network usage in different polling scenarios\n5. Test background/foreground transitions with AppLifecycleState changes\n6. Test with varying network conditions (WiFi, cellular, poor connection)\n7. Verify polling correctly adapts to user activity\n8. Performance test to ensure polling doesn't impact UI responsiveness\n9. Test message delivery latency under different polling configurations\n10. Test failure handling and circuit breaking functionality\n11. Verify Riverpod integration and provider lifecycle management\n12. Test NotificationsController with the smart polling system to verify it correctly detects and updates only when changes occur\n13. Verify proper cleanup and disposal of notification polling resources\n14. Test feed load time optimizations including parallel fetching, progressive loading, and pull-to-refresh functionality\n15. Measure and compare feed load times before and after optimization",
+      "subtasks": []
+    },
+    {
+      "id": 3,
+      "title": "Optimize User Onboarding Flow for Conversion and Activation",
+      "description": "Redesign the user onboarding experience to maximize conversion and activation rates through progressive profiling, value demonstration, and streamlined workflows.",
+      "details": "Implement progressive profiling, value demonstration, and streamlined workflows to improve user conversion and activation rates.",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 4,
+      "title": "Educational Institution Multi-User Management",
+      "description": "Implement specialized user management features for educational institutions including batch provisioning, faculty oversight, course-based access controls, and clinical assessment tools.",
+      "details": "Develop features for educational institutions including batch user provisioning, faculty oversight capabilities, course-based access controls, and clinical assessment tools.",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
+    },
+    {
+      "id": 5,
+      "title": "Fix Chat Deletion UX",
+      "description": "Replace the current hard delete implementation with a soft delete pattern that preserves message history and only hides chats for the current user, not all participants.",
+      "status": "in-progress",
+      "dependencies": [],
+      "priority": "high",
+      "details": "## Phase 1: Immediate Error Fix (COMPLETED)\n1. ✅ Fixed Chat Provider Error Handling: Updated chat_providers.dart to return AsyncError instead of throwing exception when chat not found\n2. ✅ Added Chat Not Available UI: Created comprehensive ChatNotAvailableView component with variants (ChatDeletedView, ChatHiddenView, GroupLeftView)\n3. ✅ Updated Messages View: Now gracefully handles missing chats with ChatNotAvailableView instead of ErrorScreen\n4. ✅ Updated Chat Details Page: Proper fallback UI when chat not found\n5. ✅ Updated Edit Chat Page: Clean error handling for unavailable chats\n6. ✅ Navigation Safety: All chat-related views now handle missing chats without crashes\n\n## Phase 2: Database Schema Changes\n1. Modify the chat_rooms table to support soft delete:\n```sql\nALTER TABLE chat_rooms ADD COLUMN deleted_at TIMESTAMP NULL;\nALTER TABLE chat_rooms ADD COLUMN deleted_by VARCHAR(255) NULL;\n```\n\n2. Create a new user_chat_visibility table for per-user hiding:\n```sql\nCREATE TABLE user_chat_visibility (\n  id VARCHAR(255) PRIMARY KEY,\n  user_id VARCHAR(255) NOT NULL,\n  chat_id VARCHAR(255) NOT NULL,\n  hidden_at TIMESTAMP NULL,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n```\n\n## Phase 3: API and Frontend Implementation\n1. Create a new API endpoint for hiding chats:\n```\nPUT /chat/chat_rooms/{id}/hide\n```\n\n2. Update the frontend ChatController to use hide instead of delete:\n```dart\nFuture<bool> hideChat(String chatId) async {\n  try {\n    final response = await _chatRepository.hideChat(chatId);\n    if (response.success) {\n      // Remove from local list but preserve data\n      _removeFromLocalList(chatId);\n      return true;\n    }\n    return false;\n  } catch (e) {\n    _logger.error('Failed to hide chat', e);\n    return false;\n  }\n}\n```\n\n3. Implement different behaviors for one-to-one vs group chats:\n   - One-to-one: Hide for current user only\n   - Group chats: Option to leave group or hide conversation\n\n4. Update chat list queries to filter based on visibility settings\n\n## URGENT: HPU Demo Requirements\n- Complete Phases 2-3 by Saturday for Tuesday's HPU demo\n- Ensure zero chat deletion crashes during the demo\n- Focus on implementing the user_chat_visibility table and hide API endpoint\n- Test thoroughly with all chat scenarios (one-to-one, group chats)",
+      "testStrategy": "1. Verify database schema changes correctly implement soft delete\n2. Test hiding a chat for one user and verify it remains visible for others\n3. Test different scenarios: one-to-one chat hiding vs group chat hiding\n4. Verify that hidden chats can be restored if needed\n5. Test error handling when accessing a hidden chat\n   - Verify the ChatNotAvailableView components display correctly in all scenarios\n   - Confirm that the appropriate variant (ChatDeletedView, ChatHiddenView, GroupLeftView) is shown\n6. Verify that message history is preserved when a chat is hidden\n7. Performance test to ensure chat list queries remain efficient with visibility filtering\n8. Regression test to ensure Phase 1 error handling continues to work with new implementation\n9. Pre-demo validation: Run through all chat deletion/hiding scenarios that might occur during the HPU demo\n10. Create a demo script with specific test cases to verify during final pre-demo check",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Database Schema Changes for Message Deletion",
+          "description": "Design and implement schema changes to support both soft and hard delete strategies for chat messages, ensuring compliance with healthcare retention and audit requirements.",
+          "dependencies": [],
+          "details": "Add a 'deleted_at' timestamp and 'deleted_by' user reference to the messages table for soft deletes. Ensure audit trail fields are preserved and consider a separate archival table for hard deletes. Implement message retention policy fields as needed.",
+          "status": "pending"
+        },
+        {
+          "id": 2,
+          "title": "API and Backend Logic for Deletion and Retention",
+          "description": "Update backend logic and API endpoints to handle message deletion requests, enforce retention policies, and maintain audit trails in line with industry best practices.",
+          "dependencies": [],
+          "details": "Implement endpoints for soft delete (mark as deleted, retain for audit/search), hard delete (permanent removal after retention period), and restoration if allowed. Ensure all deletion actions are logged for compliance. Integrate policy checks for healthcare-specific retention and deletion rules.",
+          "status": "pending"
+        },
+        {
+          "id": 3,
+          "title": "Frontend UX Updates for Deletion Flows",
+          "description": "Redesign chat UI to provide user-friendly, confirmation-driven deletion flows modeled after WhatsApp, Slack, Teams, and Discord, with clear feedback and undo options where appropriate.",
+          "dependencies": [],
+          "details": "Add contextual delete actions (e.g., long-press, right-click), confirmation dialogs, and visual indicators for deleted messages (e.g., 'This message was deleted'). Ensure flows align with healthcare privacy and user experience best practices. Provide clear messaging about retention and audit policies.",
+          "status": "pending"
+        },
+        {
+          "id": 4,
+          "title": "Comprehensive Testing and Demo Validation",
+          "description": "Develop and execute test plans covering all deletion scenarios, retention policy enforcement, audit trail integrity, and user experience validation, including demo walkthroughs.",
+          "dependencies": [],
+          "details": "Write unit, integration, and end-to-end tests for soft/hard delete, retention expiry, and audit logging. Validate frontend flows for confirmation, undo, and deleted message display. Conduct demo sessions to ensure all requirements and UX patterns are met.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Fix Image Message Shaking & Picker Modal Issues",
+      "description": "Resolve critical UX issues with image messaging including chat layout shifts, full-screen modal takeover, broken cropping, and state management problems to improve user experience. URGENT: Must be fixed by Sunday for HPU healthcare demo on Tuesday.",
+      "status": "done",
+      "dependencies": [
+        1,
+        2
+      ],
+      "priority": "high",
+      "details": "## Implementation Plan\n\n### Phase 1: UI Safety Check (URGENT - DEMO PRIORITY)\n1. Audit all image-related components in the chat interface:\n   - ImageMessageBubble\n   - ImagePickerModal\n   - ImageCropperView\n   - ImagePreviewScreen\n2. Identify specific causes of layout shifts:\n   ```dart\n   // Check for missing size constraints in image containers\n   Container(\n     width: MediaQuery.of(context).size.width * 0.7, // Add fixed width\n     constraints: BoxConstraints(maxHeight: 300), // Add max height\n     child: ImageMessageWidget(message: message),\n   )\n   ```\n3. Add placeholder dimensions during image loading:\n   ```dart\n   CachedNetworkImage(\n     imageUrl: message.imageUrl,\n     placeholder: (context, url) => Container(\n       width: message.imageWidth ?? 200,\n       height: message.imageHeight ?? 200,\n       color: Colors.grey[300],\n     ),\n   )\n   ```\n\n### Phase 2: Modal Fixes (URGENT - DEMO PRIORITY)\n1. Refactor ImagePickerModal to use ModalBottomSheet instead of full-screen takeover:\n   ```dart\n   showModalBottomSheet(\n     context: context,\n     isScrollControlled: true,\n     backgroundColor: Colors.transparent,\n     builder: (context) => ImagePickerBottomSheet(),\n   );\n   ```\n2. Implement proper modal dismissal handling:\n   ```dart\n   // Add WillPopScope to handle back button properly\n   WillPopScope(\n     onWillPop: () async {\n       // Clean up resources before dismissing\n       await imagePickerController.dispose();\n       return true;\n     },\n     child: ImagePickerBottomSheet(),\n   )\n   ```\n3. Fix z-index issues with modals appearing behind other UI elements\n\n### Phase 3: Polling Enhancement\n1. Modify the PollingService to pause image uploads during app state changes:\n   ```dart\n   void _handleAppLifecycleChange(AppLifecycleState state) {\n     if (state == AppLifecycleState.paused) {\n       _pauseActiveImageUploads();\n     } else if (state == AppLifecycleState.resumed) {\n       _resumeActiveImageUploads();\n     }\n   }\n   ```\n2. Implement proper cleanup of image resources when chat view is disposed\n\n### Phase 4: Cropping Fixes (URGENT - DEMO PRIORITY)\n1. Fix the image cropper to maintain aspect ratio correctly:\n   ```dart\n   ImageCropper(\n     aspectRatio: CropAspectRatio(ratioX: 1, ratioY: 1),\n     cropStyle: CropStyle.rectangle,\n     compressQuality: 85, // Reduce file size while maintaining quality\n   )\n   ```\n2. Add proper error handling for corrupted images or failed cropping operations\n3. Implement image size validation before upload to prevent oversized images\n\n### Phase 5: Optimistic UI (URGENT - DEMO PRIORITY)\n1. Implement optimistic image message rendering:\n   ```dart\n   // Show local image immediately while uploading\n   if (message.status == 'sending' && message.localImagePath != null) {\n     return Image.file(File(message.localImagePath));\n   } else {\n     return CachedNetworkImage(imageUrl: message.imageUrl);\n   }\n   ```\n2. Add smooth transitions between local and uploaded images\n3. Implement proper fallback UI for failed uploads\n\n### Phase 6: Platform Optimization\n1. Add platform-specific image handling for iOS and Android:\n   ```dart\n   if (Platform.isIOS) {\n     // Use iOS-specific image picker options\n     final pickedFile = await ImagePicker().pickImage(\n       source: ImageSource.gallery,\n       imageQuality: 85,\n     );\n   } else {\n     // Use Android-specific image picker options\n     final pickedFile = await ImagePicker().pickImage(\n       source: ImageSource.gallery,\n       imageQuality: 80,\n     );\n   }\n   ```\n2. Optimize image caching strategy to reduce memory usage\n3. Implement proper image compression before upload to reduce bandwidth usage\n\n## Healthcare Demo Considerations\n1. Ensure image sharing appears professional and reliable for healthcare context\n2. Prioritize stability over additional features for the Tuesday demo\n3. Focus on making the core image sharing workflow flawless\n4. Test with realistic healthcare image examples (e.g., document scans, medical diagrams)",
+      "testStrategy": "## Testing Strategy\n\n### 1. UI Stability Testing (URGENT - DEMO PRIORITY)\n- Create a test suite specifically for layout stability:\n  ```dart\n  testWidgets('Image message does not cause layout shifts', (WidgetTester tester) async {\n    // Arrange: Set up chat with image messages\n    await tester.pumpWidget(MaterialApp(home: ChatScreen()));\n    \n    // Act: Scroll through messages with images\n    await tester.drag(find.byType(ListView), const Offset(0, -500));\n    await tester.pump();\n    \n    // Assert: Measure and verify no layout shifts occurred\n    final initialLayout = tester.getRect(find.byType(MessageBubble).first);\n    await tester.pump(Duration(milliseconds: 500));\n    final finalLayout = tester.getRect(find.byType(MessageBubble).first);\n    expect(initialLayout, equals(finalLayout));\n  });\n  ```\n\n### 2. Modal Behavior Testing (URGENT - DEMO PRIORITY)\n- Test modal appearance and dismissal:\n  ```dart\n  testWidgets('Image picker modal appears and dismisses correctly', (WidgetTester tester) async {\n    // Arrange: Set up chat screen\n    await tester.pumpWidget(MaterialApp(home: ChatScreen()));\n    \n    // Act: Tap image attachment button\n    await tester.tap(find.byIcon(Icons.image));\n    await tester.pumpAndSettle();\n    \n    // Assert: Verify modal is visible\n    expect(find.byType(ImagePickerBottomSheet), findsOneWidget);\n    \n    // Act: Dismiss modal\n    await tester.tap(find.byIcon(Icons.close));\n    await tester.pumpAndSettle();\n    \n    // Assert: Verify modal is dismissed\n    expect(find.byType(ImagePickerBottomSheet), findsNothing);\n  });\n  ```\n\n### 3. Cropping Functionality Testing (URGENT - DEMO PRIORITY)\n- Test image cropping with various aspect ratios:\n  ```dart\n  testWidgets('Image cropper maintains selected aspect ratio', (WidgetTester tester) async {\n    // Arrange: Set up cropper with test image\n    final testImage = createTestImage(800, 600);\n    await tester.pumpWidget(MaterialApp(home: ImageCropperView(image: testImage)));\n    \n    // Act: Select 1:1 aspect ratio\n    await tester.tap(find.text('Square'));\n    await tester.pumpAndSettle();\n    \n    // Assert: Verify crop box has correct aspect ratio\n    final cropBox = tester.getRect(find.byType(CropBox));\n    expect(cropBox.width / cropBox.height, closeTo(1.0, 0.01));\n  });\n  ```\n\n### 4. State Management Testing\n- Test image upload state transitions:\n  ```dart\n  test('Image message transitions through correct states during upload', () async {\n    // Arrange: Set up mock image upload\n    final controller = ImageMessageController();\n    final mockImage = File('test/resources/test_image.jpg');\n    \n    // Act: Start upload\n    final message = await controller.sendImage(mockImage);\n    \n    // Assert: Verify initial state\n    expect(message.status, equals('sending'));\n    expect(message.localImagePath, isNotNull);\n    \n    // Act: Complete upload\n    await completeUpload(message);\n    \n    // Assert: Verify final state\n    expect(message.status, equals('sent'));\n    expect(message.imageUrl, isNotNull);\n  });\n  ```\n\n### 5. Performance Testing\n- Measure memory usage during image operations:\n  ```dart\n  test('Image handling does not cause memory leaks', () async {\n    // Arrange: Set up memory tracking\n    final memoryBefore = await getApplicationMemoryUsage();\n    \n    // Act: Perform multiple image operations\n    for (int i = 0; i < 20; i++) {\n      await pickAndProcessImage();\n    }\n    \n    // Force garbage collection\n    await triggerGC();\n    \n    // Assert: Verify memory usage is within acceptable limits\n    final memoryAfter = await getApplicationMemoryUsage();\n    expect(memoryAfter - memoryBefore, lessThan(10 * 1024 * 1024)); // Less than 10MB increase\n  });\n  ```\n\n### 6. Integration Testing (URGENT - DEMO PRIORITY)\n- End-to-end test of image messaging flow:\n  ```dart\n  testWidgets('Complete image messaging flow works correctly', (WidgetTester tester) async {\n    // Arrange: Set up chat screen with mock services\n    await tester.pumpWidget(MaterialApp(home: ChatScreen()));\n    \n    // Act: Select image\n    await tester.tap(find.byIcon(Icons.image));\n    await tester.pumpAndSettle();\n    await tester.tap(find.text('Gallery'));\n    await tester.pumpAndSettle();\n    \n    // Act: Crop image\n    await tester.tap(find.text('Crop'));\n    await tester.pumpAndSettle();\n    await tester.tap(find.text('Done'));\n    await tester.pumpAndSettle();\n    \n    // Act: Send image\n    await tester.tap(find.text('Send'));\n    await tester.pumpAndSettle();\n    \n    // Assert: Verify image appears in chat\n    expect(find.byType(ImageMessageBubble), findsOneWidget);\n    \n    // Act: Wait for upload to complete\n    await tester.pump(Duration(seconds: 2));\n    \n    // Assert: Verify message status updated correctly\n    final messageBubble = find.byType(ImageMessageBubble);\n    expect(tester.widget<ImageMessageBubble>(messageBubble).message.status, equals('sent'));\n  });\n  ```\n\n### 7. Cross-Platform Testing\n- Test on both iOS and Android devices to verify platform-specific behavior\n- Verify correct handling of different image formats (JPEG, PNG, HEIC, etc.)\n- Test with various device screen sizes to ensure responsive layout\n\n### 8. Healthcare Demo Validation (URGENT - DEMO PRIORITY)\n- Test with realistic healthcare document images\n- Verify professional appearance and reliability of image sharing\n- Conduct a full demo rehearsal before Tuesday",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Conduct Comprehensive UI Audit",
+          "description": "Review the current UI for layout inconsistencies, modal usage, image handling, and cross-platform issues. Document all findings and prioritize based on demo urgency.",
+          "dependencies": [],
+          "details": "Focus on adaptive design, layout stability, and platform-specific inconsistencies. Use Flutter's best practices for breaking down complex widgets and ensuring a maintainable structure.\n<info added on 2025-05-31T18:07:00.000Z>\nTESTING RESULTS: The image message fixes from PR #142 are NOT working as expected during local testing.\n\nIssues Encountered:\n1. Authentication system required extensive troubleshooting to get backends properly connected\n2. After resolving backend connectivity issues, the core image message problems persist\n3. The fixes implemented by the remote agent do not appear to resolve the original UX issues\n\nCurrent Status:\n- ✅ Local testing environment is now properly configured with working authentication\n- ✅ Both backends (main and SSO) are running and communicating correctly  \n- ❌ Image message shaking, modal takeover, and cropping issues remain unresolved\n- ❌ The PR #142 changes did not effectively fix the reported problems\n\nNext Steps Required:\n1. Conduct thorough analysis of why the implemented fixes are ineffective\n2. Review the actual code changes in PR #142 to identify gaps\n3. Develop alternative implementation approach\n4. Consider reverting PR #142 and implementing different solution\n\nPriority: HIGH - Demo preparation timeline is critical\n</info added on 2025-05-31T18:07:00.000Z>\n<info added on 2025-05-31T19:08:01.635Z>\n✅ ANALYSIS COMPLETE & ISSUE RESOLVED\n\nROOT CAUSE IDENTIFIED:\n- PR #142 was successfully merged into main branch (commit: 01d775e4)\n- Local environment was on production branch, missing the merged changes\n- Successfully switched to main branch and pulled latest changes\n\nCURRENT STATUS:\n✅ All PR #142 changes are now active in the codebase\n✅ ImageMessageBox converted to StatefulWidget with animation controller\n✅ Fixed minimum dimensions (120x120) to prevent layout shifts\n✅ Web-specific modal constraints implemented (kIsWeb detection)\n✅ Enhanced error handling and loading states\n✅ Comprehensive Flutter web optimizations applied\n\nIMPLEMENTATION VERIFIED:\n- ImageMessageBox: Now StatefulWidget with fade animations, fixed dimensions, proper error handling\n- MediaSourcePicker: Web-specific constraints, responsive design, enhanced UX\n- Image cropping: Enhanced with try-catch, loading states, web optimizations\n- All files updated with Flutter web compatibility improvements\n\nREADY FOR TESTING:\nThe sophisticated fixes implemented by the remote agent are now active and ready for Flutter web testing. The implementation addresses all original issues: image shaking, modal takeover, and cropping problems.\n</info added on 2025-05-31T19:08:01.635Z>\n<info added on 2025-05-31T20:41:02.417Z>\n✅ CRITICAL COMPILATION ERRORS FIXED\n\nSuccessfully identified and resolved the root cause of compilation errors that were preventing the app from running:\n\nISSUE RESOLVED:\n- Image cropper package API had breaking changes\n- CroppieBoundary and CroppieViewPort classes were removed in newer versions\n- WebUiSettings constructor was completely refactored\n\nSOLUTION IMPLEMENTED:\n- Updated WebUiSettings configuration to use current API\n- Removed deprecated parameters (boundary, viewPort, and 15+ other obsolete settings)\n- Simplified to: WebUiSettings(context: context, presentStyle: WebPresentStyle.page)\n- Maintained core functionality while fixing compilation\n\nDEPLOYMENT STATUS:\n✅ Code changes committed and pushed to fix/ui-overflow-and-cleanup branch\n✅ Pull Request #143 created with detailed technical documentation\n✅ PR successfully merged into main branch\n✅ App now compiles and runs successfully\n\nNEXT STEPS:\n- Ready for Browserbase testing of actual image message functionality\n- Can now proceed with testing the image shaking, modal takeover, and cropping UX issues\n- Healthcare demo preparation can continue with working application\n</info added on 2025-05-31T20:41:02.417Z>",
+          "status": "done"
+        },
+        {
+          "id": 2,
+          "title": "Fix Layout and Adaptive Design Issues",
+          "description": "Address layout bugs and ensure responsive, stable UI across devices and platforms.",
+          "dependencies": [
+            10
+          ],
+          "details": "Apply Flutter adaptive and responsive design best practices, refactor large widgets into smaller ones, and ensure consistent use of Material or Cupertino components as appropriate.",
+          "status": "done"
+        },
+        {
+          "id": 3,
+          "title": "Refactor Modal Components",
+          "description": "Refactor modal dialogs for improved state management, accessibility, and cross-platform consistency.",
+          "dependencies": [
+            10
+          ],
+          "details": "Implement best practices for modal state management, ensuring modals are decoupled from business logic and support both Material and Cupertino styles.",
+          "status": "done"
+        },
+        {
+          "id": 4,
+          "title": "Implement Robust State Management",
+          "description": "Review and refactor state management for image handling, modals, and UI updates to ensure scalability and maintainability.",
+          "dependencies": [
+            5,
+            6
+          ],
+          "details": "Adopt a proven state management solution (e.g., Provider, Riverpod, Bloc) and ensure separation of concerns between UI and logic.",
+          "status": "done"
+        },
+        {
+          "id": 5,
+          "title": "Optimize Image Loading and Caching",
+          "description": "Implement efficient image caching and memory management strategies for all platforms.",
+          "dependencies": [
+            8
+          ],
+          "details": "Use packages like cached_network_image, leverage Flutter's image cache, and set appropriate cache limits. Optimize image decoding and memory usage for iOS, Android, and web.",
+          "status": "done"
+        },
+        {
+          "id": 6,
+          "title": "Enhance Image Cropping Functionality",
+          "description": "Integrate or refactor image cropping features to ensure smooth UX and platform compatibility.",
+          "dependencies": [],
+          "details": "Use a robust cropping package, ensure cropping UI is responsive, and handle edge cases such as large images or unsupported formats.",
+          "status": "done"
+        },
+        {
+          "id": 7,
+          "title": "Implement Platform-Specific Optimizations",
+          "description": "Apply targeted optimizations for iOS, Android, and web to maximize performance and consistency.",
+          "dependencies": [],
+          "details": "Handle platform-specific image decoding, memory management, and UI conventions. Use conditional imports and platform checks where necessary.",
+          "status": "done"
+        },
+        {
+          "id": 8,
+          "title": "Strengthen Error Handling Across UI and Logic",
+          "description": "Implement comprehensive error handling for image loading, cropping, modal interactions, and state updates.",
+          "dependencies": [],
+          "details": "Use FlutterError.onError, ErrorWidget.builder, and custom error boundaries. Ensure user-friendly error messages and graceful degradation.",
+          "status": "done"
+        },
+        {
+          "id": 9,
+          "title": "Conduct Performance and Stability Testing",
+          "description": "Test the app for performance bottlenecks, memory leaks, and layout jank across all supported platforms.",
+          "dependencies": [],
+          "details": "Use Flutter DevTools, widget and integration tests, and platform-specific profiling tools. Focus on image-heavy screens and modal transitions.",
+          "status": "done"
+        },
+        {
+          "id": 10,
+          "title": "Update and Expand Documentation",
+          "description": "Document all changes, best practices applied, and platform-specific considerations for future maintainability.",
+          "dependencies": [],
+          "details": "Include code comments, architecture decisions, and usage guides for image handling, state management, and modal patterns.",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Implement Path-Based Routing for Flutter Web SEO & UX",
+      "description": "Replace hash-based routing (#/chat/123) with clean path-based routing (/chat/123) to improve SEO, user experience, and social media sharing capabilities.",
+      "details": "## Implementation Plan\n\n### 1. Flutter Code Changes\n1. Modify `main.dart` to enable path URL strategy:\n```dart\nimport 'package:flutter/material.dart';\nimport 'package:flutter_web_plugins/flutter_web_plugins.dart';\n\nvoid main() {\n  // Enable path-based routing instead of hash-based\n  setUrlStrategy(PathUrlStrategy());\n  \n  runApp(MyApp());\n}\n```\n\n2. Update route generation to support clean URLs:\n```dart\nGoRouter router = GoRouter(\n  routes: [\n    GoRoute(\n      path: '/chat/:chatId',\n      builder: (context, state) => ChatScreen(\n        chatId: state.params['chatId']!,\n      ),\n    ),\n    // Other routes...\n  ],\n);\n```\n\n3. Add SEO meta tags for individual pages:\n```dart\n// Create a MetaTagsService\nclass MetaTagsService {\n  static void updateMetaTags({\n    required String title,\n    required String description,\n    String? imageUrl,\n    String? canonicalUrl,\n  }) {\n    if (kIsWeb) {\n      document.title = title;\n      \n      // Update meta tags\n      _updateMetaTag('description', description);\n      \n      // Open Graph tags for social sharing\n      _updateMetaTag('og:title', title);\n      _updateMetaTag('og:description', description);\n      if (imageUrl != null) _updateMetaTag('og:image', imageUrl);\n      if (canonicalUrl != null) _updateMetaTag('og:url', canonicalUrl);\n      \n      // Twitter Card tags\n      _updateMetaTag('twitter:card', 'summary_large_image');\n      _updateMetaTag('twitter:title', title);\n      _updateMetaTag('twitter:description', description);\n      if (imageUrl != null) _updateMetaTag('twitter:image', imageUrl);\n    }\n  }\n  \n  static void _updateMetaTag(String property, String content) {\n    // Implementation to update or create meta tags in the document head\n  }\n}\n```\n\n4. Implement dynamic meta tag updates for each route:\n```dart\nclass ChatScreen extends StatefulWidget {\n  final String chatId;\n  \n  @override\n  _ChatScreenState createState() => _ChatScreenState();\n}\n\nclass _ChatScreenState extends State<ChatScreen> {\n  @override\n  void initState() {\n    super.initState();\n    _updateMetaTags();\n  }\n  \n  Future<void> _updateMetaTags() async {\n    // Fetch chat details\n    final chat = await ChatService.getChatById(widget.chatId);\n    \n    // Update meta tags for this specific chat\n    MetaTagsService.updateMetaTags(\n      title: 'Chat with ${chat.otherParticipant.name}',\n      description: 'Continue your conversation with ${chat.otherParticipant.name}',\n      imageUrl: chat.otherParticipant.profileImage,\n      canonicalUrl: 'https://yourapp.com/chat/${widget.chatId}',\n    );\n  }\n  \n  // Rest of the implementation...\n}\n```\n\n### 2. DigitalOcean App Platform Configuration\n1. Configure Custom Pages in DigitalOcean App Platform:\n   - Navigate to App Platform > Your App > Settings > Custom Pages\n   - Add a catchall route configuration:\n     - Source Path: `/*`\n     - Destination Path: `/index.html`\n   - This ensures all routes are directed to the Flutter app entry point\n\n2. Update build and deploy scripts to ensure proper configuration:\n```yaml\n# In your CI/CD pipeline\ndeploy:\n  script:\n    - flutter build web --release\n    - doctl apps update $APP_ID --spec app-spec.yaml\n    # Ensure custom pages configuration is applied\n    - doctl apps update-custom-domain $APP_ID --spec custom-domain-spec.yaml\n```\n\n### 3. Coordinated Deployment Strategy\n1. Create a deployment checklist:\n   - Build Flutter web app with path URL strategy enabled\n   - Deploy updated code to staging environment\n   - Configure DigitalOcean App Platform custom pages\n   - Verify all routes work correctly in staging\n   - Deploy to production with minimal downtime\n\n2. Implement a fallback mechanism during transition:\n```dart\n// In router configuration, temporarily handle both path and hash routes\nGoRouter router = GoRouter(\n  routes: [\n    GoRoute(\n      path: '/chat/:chatId',\n      builder: (context, state) => ChatScreen(\n        chatId: state.params['chatId']!,\n      ),\n    ),\n    // Legacy hash route support during transition\n    GoRoute(\n      path: '/#/chat/:chatId',\n      redirect: (context, state) => '/chat/${state.params['chatId']}',\n    ),\n  ],\n);\n```\n\n### 4. Analytics Integration\n1. Update analytics tracking to work with path-based URLs:\n```dart\nvoid logPageView(BuildContext context, String screenName) {\n  final String currentPath = GoRouterState.of(context).location;\n  \n  // Log page view to analytics\n  AnalyticsService.logEvent(\n    'page_view',\n    parameters: {\n      'screen_name': screenName,\n      'path': currentPath,\n    },\n  );\n}\n```\n\n### 5. Testing and Validation\n1. Create comprehensive tests for URL handling:\n```dart\nvoid main() {\n  testWidgets('Path-based routing works correctly', (WidgetTester tester) async {\n    await tester.pumpWidget(MyApp());\n    \n    // Navigate to a chat using path-based URL\n    await navigateTo(tester, '/chat/123');\n    \n    // Verify correct screen is shown\n    expect(find.byType(ChatScreen), findsOneWidget);\n    expect(find.text('Chat ID: 123'), findsOneWidget);\n  });\n}\n```",
+      "testStrategy": "## Test Strategy\n\n### 1. Unit Tests\n1. Test URL strategy configuration:\n```dart\nvoid main() {\n  test('URL strategy is set to PathUrlStrategy', () {\n    // Mock the web plugins\n    final mockWebPlugins = MockFlutterWebPlugins();\n    \n    // Run the app initialization\n    initializeApp();\n    \n    // Verify PathUrlStrategy was set\n    verify(mockWebPlugins.setUrlStrategy(any(that: isA<PathUrlStrategy>()))).called(1);\n  });\n}\n```\n\n2. Test route generation and parameter extraction:\n```dart\nvoid main() {\n  testWidgets('Route parameters are correctly extracted', (WidgetTester tester) async {\n    await tester.pumpWidget(MyApp());\n    \n    // Navigate to a chat route\n    await navigateTo(tester, '/chat/123');\n    \n    // Verify parameters are extracted correctly\n    final context = tester.element(find.byType(ChatScreen));\n    final params = GoRouterState.of(context).params;\n    expect(params['chatId'], equals('123'));\n  });\n}\n```\n\n3. Test meta tag service:\n```dart\nvoid main() {\n  test('Meta tags are correctly updated', () {\n    // Mock the document\n    final mockDocument = MockHtmlDocument();\n    \n    // Call the service\n    MetaTagsService.updateMetaTags(\n      title: 'Test Title',\n      description: 'Test Description',\n      imageUrl: 'https://example.com/image.jpg',\n      canonicalUrl: 'https://example.com/chat/123',\n    );\n    \n    // Verify document title was updated\n    verify(mockDocument.title = 'Test Title').called(1);\n    \n    // Verify meta tags were updated\n    verify(mockDocument.updateMetaTag('description', 'Test Description')).called(1);\n    verify(mockDocument.updateMetaTag('og:title', 'Test Title')).called(1);\n    // Additional verifications...\n  });\n}\n```\n\n### 2. Integration Tests\n1. Test navigation flows with path-based URLs:\n```dart\nvoid main() {\n  IntegrationTestWidgetsFlutterBinding.ensureInitialized();\n  \n  testWidgets('Complete navigation flow with path-based URLs', (WidgetTester tester) async {\n    await tester.pumpWidget(MyApp());\n    \n    // Navigate to chat list\n    await navigateTo(tester, '/chats');\n    expect(find.byType(ChatListScreen), findsOneWidget);\n    \n    // Tap on a chat to navigate to detail\n    await tester.tap(find.text('Test User'));\n    await tester.pumpAndSettle();\n    \n    // Verify URL changed to path-based format\n    final context = tester.element(find.byType(ChatScreen));\n    final location = GoRouterState.of(context).location;\n    expect(location, startsWith('/chat/'));\n    expect(location, isNot(contains('#')));\n  });\n}\n```\n\n2. Test deep linking:\n```dart\nvoid main() {\n  testWidgets('Deep linking works with path-based URLs', (WidgetTester tester) async {\n    // Initialize app with a specific initial route\n    await tester.pumpWidget(MyApp(initialRoute: '/chat/123'));\n    \n    // Verify correct screen is shown immediately\n    expect(find.byType(ChatScreen), findsOneWidget);\n    expect(find.text('Chat ID: 123'), findsOneWidget);\n  });\n}\n```\n\n### 3. Browser Testing\n1. Manual browser testing checklist:\n   - Test direct URL entry in browser address bar\n   - Test browser back/forward navigation\n   - Test page refresh at different routes\n   - Test bookmarking and returning to bookmarked pages\n   - Verify URL format in address bar (no hash symbols)\n\n2. Cross-browser testing matrix:\n   - Chrome (latest)\n   - Firefox (latest)\n   - Safari (latest)\n   - Edge (latest)\n   - Mobile browsers (iOS Safari, Android Chrome)\n\n### 4. SEO Verification\n1. Use Lighthouse to verify SEO scores:\n   - Run Lighthouse audit on key pages\n   - Verify \"Crawlable Links\" passes\n   - Verify meta tags are correctly rendered\n\n2. Use Google Search Console URL inspection:\n   - Submit key URLs for inspection\n   - Verify Google can render the page correctly\n   - Check for any crawling errors\n\n### 5. Social Media Sharing Tests\n1. Test Open Graph tag rendering:\n   - Use Facebook Sharing Debugger (https://developers.facebook.com/tools/debug/)\n   - Use Twitter Card Validator (https://cards-dev.twitter.com/validator)\n   - Verify preview images, titles, and descriptions appear correctly\n\n2. Manual sharing tests:\n   - Share URLs to various platforms (Facebook, Twitter, LinkedIn, etc.)\n   - Verify preview content appears correctly\n   - Verify clicking shared links navigates to correct page\n\n### 6. Deployment Verification\n1. Pre-deployment checklist:\n   - Verify all tests pass in staging environment\n   - Confirm DigitalOcean App Platform configuration is ready\n\n2. Post-deployment verification:\n   - Verify direct URL access works for all routes\n   - Test navigation between pages\n   - Verify analytics is tracking page views correctly\n   - Check server logs for any 404 errors",
+      "status": "pending",
+      "dependencies": [
+        2,
+        12
+      ],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Implement Path URL Strategy in Flutter Code",
+          "description": "Modify the Flutter application to use path-based routing instead of hash-based routing by enabling the PathUrlStrategy and updating route generation.",
+          "dependencies": [],
+          "details": "1. Add or verify the flutter_web_plugins dependency in pubspec.yaml\n2. Modify main.dart to import flutter_web_plugins and call setUrlStrategy(PathUrlStrategy())\n3. Update GoRouter configuration to support clean URL paths\n4. Implement temporary fallback mechanism to handle both path and hash routes during transition\n5. Test all routes locally to ensure they work without hash symbols",
+          "status": "pending",
+          "testStrategy": "Manually test navigation in local development environment. Verify direct URL access, browser back/forward navigation, and page refreshes work correctly with the new URL format."
+        },
+        {
+          "id": 2,
+          "title": "Configure DigitalOcean App Platform for Path-Based Routing",
+          "description": "Set up the DigitalOcean App Platform to properly handle path-based routing by configuring custom pages and ensuring all routes are directed to the Flutter app entry point.",
+          "dependencies": [],
+          "details": "1. Navigate to App Platform > Your App > Settings > Custom Pages\n2. Add a catchall route configuration with Source Path: /* and Destination Path: /index.html\n3. Update build and deploy scripts to ensure proper configuration is applied\n4. Create a deployment checklist for coordinated release\n5. Prepare rollback plan in case of issues",
+          "status": "pending",
+          "testStrategy": "Deploy to a staging environment first. Test all routes on the staging URL to verify they resolve correctly. Monitor for 404 errors during and after deployment."
+        },
+        {
+          "id": 3,
+          "title": "Implement SEO and Meta Tags Service",
+          "description": "Create a service to dynamically update meta tags for each route to improve SEO and social media sharing capabilities.",
+          "dependencies": [],
+          "details": "1. Create a MetaTagsService class with methods to update document title and meta tags\n2. Implement helper methods to update or create meta tags in the document head\n3. Add support for standard SEO tags, Open Graph tags, and Twitter Card tags\n4. Modify route handlers to call the MetaTagsService when routes change\n5. Implement dynamic meta tag updates in each screen's initState method",
+          "status": "pending",
+          "testStrategy": "Test meta tag updates using browser developer tools. Verify tags are correctly updated when navigating between routes. Use social media preview testing tools to validate Open Graph and Twitter Card implementations."
+        },
+        {
+          "id": 4,
+          "title": "Analytics Integration and Comprehensive Testing",
+          "description": "Update analytics tracking to work with path-based URLs and perform comprehensive testing across platforms and browsers.",
+          "dependencies": [],
+          "details": "1. Update analytics tracking code to use the new path-based URLs\n2. Create widget tests for URL handling and navigation\n3. Perform cross-browser testing (Chrome, Firefox, Safari, Edge)\n4. Test on mobile browsers to ensure compatibility\n5. Validate SEO implementation using tools like Lighthouse\n6. Test social media sharing to verify link previews work correctly\n7. Create a sitemap with the new clean URLs",
+          "status": "pending",
+          "testStrategy": "Create automated tests for navigation flows. Use SEO validation tools to verify meta tags. Test social media sharing on multiple platforms. Monitor analytics after deployment to ensure page views are being tracked correctly with the new URL format."
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Implement HIPAA Compliance Framework",
+      "description": "Implement comprehensive HIPAA compliance measures including data encryption, audit trails, access controls, and administrative safeguards to ensure regulatory compliance for healthcare market entry, with immediate focus on HPU dental school demo requirements for compliance roadmap presentation.",
+      "status": "pending",
+      "dependencies": [
+        12,
+        22
+      ],
+      "priority": "high",
+      "details": "**REFOCUS: HPU dental school demo in 7 days requires HIPAA compliance overview/roadmap rather than full implementation**\n\n1. Compliance Status Assessment (PRIORITY):\n   - Document current compliance status across all HIPAA requirements\n   - Identify existing security measures already in place\n   - Note that DigitalOcean BAA is already in place\n   - Create clear visual representation of compliance progress\n\n2. Compliance Roadmap Development (PRIORITY):\n   - Create phased implementation timeline with clear milestones\n   - Prioritize implementation steps based on risk assessment\n   - Develop resource allocation plan for compliance activities\n   - Focus on demonstrating strategic approach to compliance\n\n3. Data Encryption Planning:\n   - Document planned encryption approach for data at rest (AES-256)\n   - Outline strategy for securing data in transit (TLS 1.3)\n   - Create key management framework outline\n   - Focus on demonstrating understanding of encryption requirements\n\n4. Access Control Framework:\n   - Design role-based access control (RBAC) system with key roles\n   - Create permission matrix documentation\n   - Outline session management and authentication approach\n   - Focus on demonstrating understanding of access control requirements\n\n5. Audit Trail System Design:\n   - Document audit logging requirements and planned implementation\n   - Create sample audit log schema:\n   ```sql\n   CREATE TABLE audit_logs (\n     id SERIAL PRIMARY KEY,\n     user_id INTEGER NOT NULL,\n     action VARCHAR(50) NOT NULL,\n     resource_type VARCHAR(50) NOT NULL,\n     resource_id VARCHAR(50) NOT NULL,\n     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n     ip_address VARCHAR(45),\n     user_agent TEXT\n   );\n   ```\n   - Outline audit review process\n   - Focus on demonstrating understanding of audit requirements\n\n6. Business Associate Agreement Management:\n   - Document existing DigitalOcean BAA\n   - Create vendor assessment framework for future partners\n   - Outline BAA management process\n   - Focus on demonstrating understanding of BAA requirements\n\n7. Risk Assessment Framework:\n   - Create risk assessment methodology documentation\n   - Develop sample risk assessment template\n   - Outline ongoing risk management approach\n   - Focus on demonstrating understanding of risk assessment requirements\n\n8. Breach Notification Planning:\n   - Document breach notification requirements\n   - Outline incident classification framework\n   - Create notification process flowchart\n   - Focus on demonstrating understanding of breach notification requirements\n\n9. Administrative Safeguards Planning (PRIORITY):\n   - Outline training program requirements\n   - Document policy development approach\n   - Create policy review schedule\n   - Focus on demonstrating understanding of administrative requirements\n\n10. Technical Documentation (PRIORITY):\n    - Create system architecture diagram showing PHI data flows\n    - Document planned security controls\n    - Prepare HIPAA compliance roadmap presentation for dental school demo\n    - Focus on creating credible documentation for the demo",
+      "testStrategy": "**Focus on credible compliance roadmap presentation within 7 days**\n\n1. Compliance Status Verification (PRIORITY):\n   - Review documentation of current compliance status for accuracy\n   - Verify existing DigitalOcean BAA documentation\n   - Ensure compliance status visualization is clear and accurate\n\n2. Roadmap Validation (PRIORITY):\n   - Review compliance roadmap for completeness and realistic timelines\n   - Verify alignment with industry best practices\n   - Ensure roadmap addresses all HIPAA requirements\n\n3. Encryption Strategy Review:\n   - Validate encryption approach against HIPAA requirements\n   - Ensure key management framework is comprehensive\n   - Verify documentation clearly communicates encryption strategy\n\n4. Access Control Framework Validation:\n   - Review RBAC design against HIPAA requirements\n   - Verify permission matrix covers all necessary access scenarios\n   - Ensure documentation clearly communicates access control strategy\n\n5. Audit System Design Review:\n   - Validate audit logging requirements against HIPAA standards\n   - Verify audit schema captures all required information\n   - Ensure documentation clearly communicates audit strategy\n\n6. BAA Management Validation:\n   - Verify DigitalOcean BAA documentation is complete\n   - Review vendor assessment framework for comprehensiveness\n   - Ensure documentation clearly communicates BAA management approach\n\n7. Risk Assessment Framework Review:\n   - Validate risk assessment methodology against HIPAA requirements\n   - Review risk assessment template for completeness\n   - Ensure documentation clearly communicates risk management approach\n\n8. Breach Notification Plan Review:\n   - Validate breach notification process against HIPAA requirements\n   - Verify incident classification framework is comprehensive\n   - Ensure documentation clearly communicates breach notification approach\n\n9. Administrative Safeguards Validation (PRIORITY):\n   - Review training program outline for comprehensiveness\n   - Validate policy development approach against HIPAA requirements\n   - Ensure documentation clearly communicates administrative safeguards strategy\n\n10. Presentation Validation (PRIORITY):\n    - Review presentation materials for clarity and professionalism\n    - Conduct practice presentation to identify improvements\n    - Prepare responses to potential questions about compliance approach\n    - Focus on demonstrating credibility and HIPAA expertise",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Regulatory Framework Identification",
+          "description": "Identify and document all relevant HIPAA regulatory frameworks, including Privacy, Security, and Breach Notification Rules, as well as recent amendments.",
+          "dependencies": [],
+          "details": "Review current HIPAA regulations and amendments, including new requirements for encryption and multi-factor authentication. Ensure understanding of compliance deadlines and scope for dental education environments.",
+          "status": "pending"
+        },
+        {
+          "id": 2,
+          "title": "Compliance Assessment",
+          "description": "Conduct a comprehensive assessment of current organizational policies, procedures, and technical controls against HIPAA requirements.",
+          "dependencies": [
+            10
+          ],
+          "details": "Perform a gap analysis to identify areas of non-compliance, referencing updated HIPAA checklists and best practices.",
+          "status": "pending"
+        },
+        {
+          "id": 3,
+          "title": "HIPAA Compliance Roadmap Development",
+          "description": "Develop a phased roadmap for achieving and maintaining HIPAA compliance, prioritizing critical security measures and scalable solutions.",
+          "dependencies": [
+            5
+          ],
+          "details": "Outline timelines, milestones, and responsible parties for each compliance activity, considering the 180-day compliance window for new amendments.",
+          "status": "pending"
+        },
+        {
+          "id": 4,
+          "title": "Encryption Standards Implementation",
+          "description": "Implement mandatory encryption for electronic Protected Health Information (ePHI) in transit and at rest, following industry standards.",
+          "dependencies": [
+            6
+          ],
+          "details": "Adopt NIST-recommended encryption protocols and ensure all systems handling ePHI are compliant with current HIPAA encryption requirements.",
+          "status": "pending"
+        },
+        {
+          "id": 5,
+          "title": "Access Control and Multi-Factor Authentication",
+          "description": "Establish robust access control mechanisms, including multi-factor authentication (MFA), to restrict ePHI access to authorized personnel.",
+          "dependencies": [
+            8
+          ],
+          "details": "Configure role-based access controls and implement MFA across all systems accessing sensitive healthcare data.",
+          "status": "pending"
+        },
+        {
+          "id": 6,
+          "title": "Audit Trail System Deployment",
+          "description": "Deploy and configure audit trail systems to monitor, log, and review access and activity related to ePHI.",
+          "dependencies": [
+            11
+          ],
+          "details": "Ensure audit logs are tamper-evident, regularly reviewed, and retained according to HIPAA requirements.",
+          "status": "pending"
+        },
+        {
+          "id": 7,
+          "title": "Business Associate Agreement (BAA) Management",
+          "description": "Review, update, and manage Business Associate Agreements to ensure all third-party vendors comply with HIPAA standards.",
+          "dependencies": [
+            6
+          ],
+          "details": "Align BAAs with new compliance standards and maintain a centralized repository for all agreements.",
+          "status": "pending"
+        },
+        {
+          "id": 8,
+          "title": "Risk Assessment Methodology Implementation",
+          "description": "Adopt and apply a formal risk assessment methodology to identify, evaluate, and mitigate risks to ePHI.",
+          "dependencies": [
+            5
+          ],
+          "details": "Utilize NIST or HHS frameworks to conduct regular risk assessments and document findings and remediation actions.",
+          "status": "pending"
+        },
+        {
+          "id": 9,
+          "title": "Breach Notification Procedures",
+          "description": "Develop and test breach notification procedures in accordance with HIPAA Breach Notification Rule requirements.",
+          "dependencies": [],
+          "details": "Establish incident response plans, communication protocols, and timelines for notifying affected parties and regulatory bodies.",
+          "status": "pending"
+        },
+        {
+          "id": 10,
+          "title": "Administrative Safeguards Implementation",
+          "description": "Implement administrative safeguards, including workforce training, policy development, and sanctions for non-compliance.",
+          "dependencies": [
+            6
+          ],
+          "details": "Develop and deliver HIPAA training programs tailored to dental education environments and establish clear reporting channels.",
+          "status": "pending"
+        },
+        {
+          "id": 11,
+          "title": "Technical Documentation and Validation",
+          "description": "Document all technical and administrative controls, and validate their effectiveness through regular testing and review.",
+          "dependencies": [
+            8,
+            11,
+            1
+          ],
+          "details": "Maintain up-to-date documentation for all implemented safeguards and conduct periodic validation exercises.",
+          "status": "pending"
+        },
+        {
+          "id": 12,
+          "title": "Audit Readiness and Continuous Monitoring",
+          "description": "Prepare for internal and external audits by maintaining compliance documentation, monitoring controls, and conducting mock audits.",
+          "dependencies": [],
+          "details": "Utilize compliance management platforms to track progress, generate reports, and ensure ongoing audit readiness.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Advanced Space Management Features",
+      "description": "Implement advanced collaboration features for spaces including advanced permissions, space templates, activity feeds, and integration capabilities.",
+      "details": "Develop advanced space management features including granular permissions, space templates, activity feeds, and third-party integration capabilities.",
+      "testStrategy": "",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "medium",
+      "subtasks": []
+    },
+    {
+      "id": 10,
+      "title": "HPU Dental School Demo Preparation",
+      "description": "Prepare a focused demo for High Point University dental school showcasing core space functionality (messaging, collaboration, user management) with HIPAA compliance overview, emphasizing the platform's value for dental education workflows and multi-user collaboration.",
+      "status": "in-progress",
+      "dependencies": [
+        8,
+        11,
+        18
+      ],
+      "priority": "high",
+      "details": "## Implementation Plan\n\n### 1. Demo Environment Setup\n- Create a dedicated demo environment with sample educational institution data:\n  ```bash\n  # Clone production environment to demo instance\n  ./scripts/clone-env.sh prod demo-hpu\n  \n  # Seed with dental school specific sample data\n  node scripts/seed-demo-data.js --template=dental-education-basic\n  ```\n- Configure demo accounts with appropriate role-based permissions:\n  - Administrator (full system access)\n  - Faculty (course management, student oversight)\n  - Student (limited access, collaborative features)\n  - IT Staff (system configuration)\n\n### 2. Core Space Functionality Showcase\n- Prepare demonstrations of key platform features:\n  - Messaging system for faculty-student and student-student communication\n  - Collaboration tools for group projects and case discussions\n  - Document sharing and co-editing capabilities\n  - User management and permissions relevant to educational settings\n  - Notification systems for updates and assignments\n- Create sample dental education scenarios:\n  - Case study discussion between faculty and students\n  - Collaborative treatment planning exercise\n  - Document sharing for educational materials\n\n### 3. HIPAA Compliance Overview\n- Prepare a concise presentation on HIPAA compliance readiness:\n  - Highlight existing DigitalOcean BAA in place\n  - Overview of current security measures implemented\n  - Clear roadmap for full HIPAA compliance\n  - Data protection measures already in place\n- Create a simple one-page compliance summary highlighting:\n  - Current compliance status\n  - Planned compliance milestones\n  - Security features relevant to PHI protection\n\n### 4. Educational Institution User Management\n- Configure and demonstrate:\n  - Batch user provisioning for student cohorts\n  - Integration capabilities with university systems\n  - Course-based access controls\n  - Faculty oversight of student activities\n  - Group management for clinical teams\n\n### 5. Core Value Proposition Presentation\n- Develop slide deck highlighting:\n  - Improved collaboration in dental education\n  - Enhanced communication between faculty and students\n  - Streamlined workflow for dental education\n  - Compliance and security benefits\n  - Implementation timeline and support model\n- Create simple ROI overview focused on educational benefits\n\n### 6. Technical Integration Overview\n- Prepare high-level documentation on:\n  - API capabilities for basic integration with university systems\n  - User provisioning options\n  - Authentication and authorization framework\n  - Mobile access capabilities for on-the-go collaboration\n\n### 7. Demo Script & Rehearsal\n- Create focused demo script with:\n  - Key talking points for core functionality\n  - Clear explanation of HIPAA compliance status and roadmap\n  - Answers to anticipated questions about educational use cases\n  - Technical contingency plans for demo issues\n- Conduct at least two full rehearsals with team members playing different stakeholder roles",
+      "testStrategy": "## Test Strategy\n\n### 1. Pre-Demo Environment Validation\n- Verify demo environment is properly configured:\n  ```bash\n  # Run automated environment validation\n  ./scripts/validate-demo-env.sh --env=demo-hpu\n  \n  # Verify core sample data is loaded correctly\n  node scripts/verify-demo-data.js --template=dental-education-basic\n  ```\n- Test all user accounts and ensure proper permissions:\n  - Login as each role type and verify access controls\n  - Test messaging and collaboration features between different roles\n  - Verify group functionality is working correctly\n\n### 2. Core Functionality Testing\n- Execute test script covering key demo scenarios:\n  - Send and receive messages between users\n  - Create and collaborate on shared documents\n  - Test user management and group creation\n  - Verify notification system functionality\n- Document any workarounds needed for features not yet in production\n\n### 3. Performance Testing\n- Simulate concurrent users for core functionality:\n  ```bash\n  # Run focused load test with 25 simulated users\n  ./scripts/load-test.sh --env=demo-hpu --users=25 --duration=5m --features=core\n  ```\n- Verify response times remain under 500ms for messaging and collaboration features\n- Test on the actual network that will be used for the demo\n\n### 4. Presentation Materials Review\n- Conduct peer review of all presentation materials:\n  - Slide deck accuracy and messaging\n  - HIPAA compliance roadmap clarity\n  - Value proposition alignment with dental education needs\n  - Technical overview accuracy\n- Incorporate feedback and revise as needed\n\n### 5. Demo Rehearsal Assessment\n- Record rehearsal sessions and review for:\n  - Timing (ensure demo fits within allocated timeframe)\n  - Clarity of explanations about core functionality\n  - Effective communication of HIPAA compliance status\n  - Handling of potential questions about educational use cases\n- Have technical team members attempt to \"break\" the core features to identify edge cases\n\n### 6. Contingency Planning\n- Create backup plans for potential demo issues:\n  - Local backup of demo environment in case of connectivity issues\n  - Screenshots/videos of key features as fallback\n  - Prepared explanations for any known limitations\n- Assign team members specific roles during demo (presenter, technical support, note-taker)",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Demo Environment Setup",
+          "description": "Configure a realistic, high-fidelity demo environment tailored for healthcare and dental education workflows, ensuring all necessary equipment, software, and network infrastructure are in place.",
+          "dependencies": [],
+          "details": "Set up simulation labs or virtual demo spaces with configurable layouts, high-fidelity manikins, dental education tools, and ensure HIPAA-compliant platforms. Verify network reliability, backup processes, and prepare all demo devices and accounts.",
+          "status": "pending"
+        },
+        {
+          "id": 2,
+          "title": "Feature Demonstration Preparation",
+          "description": "Identify and script key product features relevant to healthcare and educational institution needs, focusing on pain points and workflow improvements for dental education.",
+          "dependencies": [],
+          "details": "Select features that address stakeholder priorities (e.g., EHR usability, patient engagement, dental charting). Prepare demo data and scenarios that reflect real-world use cases in university and dental school settings.",
+          "status": "pending"
+        },
+        {
+          "id": 3,
+          "title": "Compliance and Security Overview",
+          "description": "Develop a compliance presentation covering HIPAA, FERPA, and other relevant regulations, with documentation and live demonstrations of security features.",
+          "dependencies": [],
+          "details": "Prepare compliance checklists, documentation, and demo workflows that highlight data privacy, access controls, and audit trails. Tailor content for both healthcare and educational compliance requirements.",
+          "status": "pending"
+        },
+        {
+          "id": 4,
+          "title": "User Management and Access Control Demo",
+          "description": "Demonstrate user roles, permissions, and onboarding processes, emphasizing ease of use and alignment with university IT policies.",
+          "dependencies": [],
+          "details": "Showcase user provisioning, role-based access, and integration with university single sign-on systems. Prepare scenarios for faculty, students, and administrative staff.",
+          "status": "pending"
+        },
+        {
+          "id": 5,
+          "title": "Value Proposition and Stakeholder Engagement",
+          "description": "Craft a compelling value proposition tailored to healthcare and educational stakeholders, highlighting ROI, workflow efficiencies, and student/faculty benefits.",
+          "dependencies": [
+            5,
+            6
+          ],
+          "details": "Develop targeted messaging for decision-makers, IT, faculty, and clinical staff. Prepare supporting materials (slides, handouts) and stakeholder-specific talking points.",
+          "status": "pending"
+        },
+        {
+          "id": 6,
+          "title": "Technical Integration Presentation",
+          "description": "Prepare a technical overview of system integration with university IT infrastructure, EHRs, and dental education platforms.",
+          "dependencies": [],
+          "details": "Demonstrate API capabilities, data migration processes, and compatibility with existing systems. Provide technical documentation and address common integration challenges.",
+          "status": "pending"
+        },
+        {
+          "id": 7,
+          "title": "Demo Script and Q&A Preparation",
+          "description": "Develop a detailed demo script and anticipated Q&A, incorporating best practices for healthcare and educational sales demos.",
+          "dependencies": [
+            5,
+            6,
+            1
+          ],
+          "details": "Script transitions, feature highlights, compliance talking points, and stakeholder-specific scenarios. Prepare answers to common objections and technical questions.",
+          "status": "pending"
+        },
+        {
+          "id": 8,
+          "title": "Rehearsal and Logistics Coordination",
+          "description": "Conduct full demo rehearsals and finalize all logistical details, ensuring smooth execution and stakeholder participation.",
+          "dependencies": [],
+          "details": "Schedule dry runs with all presenters, test all equipment and connections, confirm stakeholder attendance, and prepare contingency plans for technical issues.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Security Hardening & Authentication Enhancement",
+      "description": "Implement comprehensive security hardening measures across infrastructure and applications, with immediate focus on demonstrable features for the HPU dental school demo in 7 days, including basic system hardening, MFA implementation, simple RBAC, and security monitoring.",
+      "status": "pending",
+      "dependencies": [
+        12,
+        8
+      ],
+      "priority": "high",
+      "details": "1. System Hardening: Apply critical best practices for network, server, application, database, and OS hardening that can be demonstrated in the HPU dental school demo. Focus on visible security improvements like removing unnecessary components, enforcing least privilege, and enabling secure logging.\n2. Authentication Enhancement: Implement demonstrable multi-factor authentication (MFA) for the demo, with emphasis on user experience and visual security indicators. Prioritize features that healthcare stakeholders can see and understand.\n3. Role-Based Access Control (RBAC): Implement a simplified RBAC model for demo purposes, showing clear differentiation between user roles (e.g., admin, dentist, staff) with visually distinct access levels and permissions.\n4. Security Monitoring: Set up basic security monitoring with visual dashboards and alerts that can be showcased during the demo to illustrate real-time security awareness.\n5. Demo Preparation: Create specific demo scenarios that highlight the implemented security features in a healthcare context, focusing on HIPAA-relevant security controls.\n\nPost-Demo Roadmap (for implementation after the demo):\n- API Security: Secure all APIs with authentication, authorization, input validation, and rate limiting.\n- Comprehensive Vulnerability Management: Establish regular vulnerability scanning and remediation processes.\n- Penetration Testing: Schedule and conduct regular penetration tests.\n- Incident Response: Develop and document comprehensive incident response procedures.\n\nCoordinate with HIPAA compliance efforts to ensure all security controls align with regulatory requirements.",
+      "testStrategy": "- Verify critical systems are hardened with visually demonstrable security controls.\n- Test MFA flows that will be shown during the demo, ensuring they work flawlessly.\n- Review simplified RBAC implementation by demonstrating different access levels for different roles.\n- Test security monitoring dashboards and alerts that will be showcased.\n- Conduct demo dry-runs to ensure all security features can be effectively presented to healthcare stakeholders.\n- Document visual proof points of security measures for the presentation.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Conduct Infrastructure and Asset Discovery",
+          "description": "Identify and inventory all devices, systems, and applications within the healthcare and educational environments to establish a comprehensive attack surface baseline.",
+          "dependencies": [],
+          "details": "Utilize automated discovery tools to map network-connected assets, including medical devices, servers, endpoints, and IoT devices. Document unauthorized or unmanaged devices for remediation.",
+          "status": "pending"
+        },
+        {
+          "id": 2,
+          "title": "Assess Current Security Posture and Vulnerabilities",
+          "description": "Evaluate existing security controls, identify vulnerabilities, and assess compliance with healthcare and educational security standards.",
+          "dependencies": [],
+          "details": "Perform vulnerability scans, penetration testing, and policy reviews. Prioritize remediation based on risk to patient/student data and critical operations.",
+          "status": "pending"
+        },
+        {
+          "id": 3,
+          "title": "Design and Implement System Hardening Measures",
+          "description": "Apply industry best practices to harden systems, including patch management, secure configurations, and device segmentation.",
+          "dependencies": [
+            5
+          ],
+          "details": "Implement least privilege, disable unnecessary services, enforce strong encryption, and segment networks to isolate sensitive healthcare and educational data.",
+          "status": "pending"
+        },
+        {
+          "id": 4,
+          "title": "Upgrade Authentication Mechanisms with Multi-Factor Authentication (MFA)",
+          "description": "Enhance authentication by implementing MFA across all critical systems, tailored to healthcare and educational institution requirements.",
+          "dependencies": [
+            6
+          ],
+          "details": "Select and deploy MFA solutions compatible with clinical workflows and educational access needs. Ensure compliance with HIPAA and FERPA where applicable.",
+          "status": "pending"
+        },
+        {
+          "id": 5,
+          "title": "Design Role-Based Access Control (RBAC) Framework",
+          "description": "Develop a robust RBAC model to ensure users only access data necessary for their roles, following healthcare and educational best practices.",
+          "dependencies": [],
+          "details": "Define roles, permissions, and access policies for clinical, administrative, and educational staff. Map roles to least-privilege access and document exceptions.",
+          "status": "pending"
+        },
+        {
+          "id": 6,
+          "title": "Implement and Test RBAC and Security Monitoring Systems",
+          "description": "Deploy RBAC controls and integrate security monitoring solutions to detect and respond to threats in real time.",
+          "dependencies": [],
+          "details": "Configure monitoring for unauthorized access, anomalous behavior, and policy violations. Test RBAC enforcement and monitoring alerts in both healthcare and educational contexts.",
+          "status": "pending"
+        },
+        {
+          "id": 7,
+          "title": "Create Demonstrable Security Scenarios for Healthcare Demos",
+          "description": "Develop demo scenarios that showcase security features, including MFA, RBAC, vulnerability management, and incident response.",
+          "dependencies": [],
+          "details": "Script and simulate real-world attack and response scenarios, highlighting compliance, audit trails, and user experience for healthcare stakeholders.",
+          "status": "pending"
+        },
+        {
+          "id": 8,
+          "title": "Develop Post-Demo Roadmap for Long-Term Security",
+          "description": "Outline a strategic plan for ongoing security improvements, vulnerability management, and compliance monitoring post-demo.",
+          "dependencies": [],
+          "details": "Include timelines, resource requirements, and milestones for continuous improvement, staff training, and regular security assessments.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Implement Error Handling & Monitoring",
+      "description": "Create a comprehensive error handling system with proper logging, user feedback, and monitoring to improve reliability and troubleshooting capabilities, building on the existing performance monitoring foundation.",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2,
+        13
+      ],
+      "priority": "low",
+      "details": "## Existing Performance Monitoring Foundation\n\n- Performance monitoring middleware tracks API response times\n- X-Response-Time and X-Timestamp headers added to all API responses\n- Slow request logging for requests exceeding 1000ms\n- Admin performance endpoints (/admin/performance) with multiple report types\n- Structured logging for performance metrics and database operations\n\n## Remaining Implementation Tasks\n\n1. Integrate Sentry for error tracking in both frontend and backend:\n```dart\n// Flutter integration\nvoid initSentry() {\n  Sentry.init(\n    (options) {\n      options.dsn = 'YOUR_SENTRY_DSN';\n      options.tracesSampleRate = 1.0;\n    },\n  );\n}\n```\n\n2. Implement structured error logging for message operations:\n```dart\nvoid logMessageError(String operation, String messageId, dynamic error) {\n  Sentry.captureEvent(\n    SentryEvent(\n      level: SentryLevel.error,\n      message: SentryMessage('Message operation failed'),\n      tags: {\n        'operation': operation,\n        'messageId': messageId,\n      },\n    ),\n  );\n}\n```\n\n3. Create user-friendly error messages for common failure scenarios:\n   - Network connectivity issues\n   - Server errors\n   - Permission problems\n   - Timeout errors\n\n4. Implement graceful degradation for API failures:\n   - Offline mode with cached messages\n   - Automatic retry with exponential backoff\n   - Fallback to older messages when new ones can't be fetched\n\n5. Extend existing monitoring for additional key metrics:\n   - Message delivery success rate\n   - Error frequency by type\n   - User-reported issues\n\n6. Enhance the existing admin dashboard to include error monitoring alongside performance metrics",
+      "testStrategy": "1. Verify error events are correctly captured in Sentry\n2. Test error handling with simulated API failures\n3. Verify user-friendly error messages appear correctly\n4. Test offline mode and message caching\n5. Verify automatic retry logic works with network fluctuations\n6. Test integration between existing performance monitoring and new error tracking\n7. Verify enhanced monitoring dashboard shows both performance and error metrics\n8. Perform chaos testing by randomly failing different components",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Integrate Sentry in Frontend Application",
+          "description": "Set up Sentry SDK in the frontend codebase, configure DSN, and verify error/event reporting.",
+          "dependencies": [],
+          "details": "Install @sentry/browser, initialize Sentry with the correct DSN, and test error capture in the frontend application.",
+          "status": "pending",
+          "parentTaskId": 33
+        },
+        {
+          "id": 2,
+          "title": "Integrate Sentry in Backend Application",
+          "description": "Set up Sentry SDK in the backend codebase, configure DSN, and verify error/event reporting.",
+          "dependencies": [],
+          "details": "Install the appropriate Sentry SDK for the backend language (e.g., Python, Node.js), initialize with DSN, and test error capture in the backend application.",
+          "status": "pending",
+          "parentTaskId": 33
+        },
+        {
+          "id": 3,
+          "title": "Implement Structured Logging",
+          "description": "Adopt a structured logging format (e.g., JSON) in both frontend and backend for consistent log output.",
+          "dependencies": [],
+          "details": "Configure logging libraries to output logs in a structured format, ensuring logs are easily parsable and can be correlated with Sentry events.",
+          "status": "done",
+          "parentTaskId": 33
+        },
+        {
+          "id": 4,
+          "title": "Develop User Feedback UI",
+          "description": "Create a user interface component for collecting feedback and error reports from users.",
+          "dependencies": [],
+          "details": "Design and implement a feedback form that can be triggered on error events, optionally integrating with Sentry's user feedback API.",
+          "status": "pending",
+          "parentTaskId": 33
+        },
+        {
+          "id": 5,
+          "title": "Implement Offline/Automatic Retry Logic",
+          "description": "Ensure error/event reporting and feedback submission are resilient to network failures by implementing offline storage and retry mechanisms.",
+          "dependencies": [],
+          "details": "Store failed submissions locally and retry sending them when connectivity is restored, both for Sentry events and user feedback.",
+          "status": "pending",
+          "parentTaskId": 33
+        },
+        {
+          "id": 6,
+          "title": "Add Fallback Mechanisms",
+          "description": "Implement graceful degradation strategies for error reporting and feedback in case Sentry or network is unavailable.",
+          "dependencies": [],
+          "details": "Provide alternative logging or local storage when Sentry is unreachable, and ensure the application remains usable.",
+          "status": "pending",
+          "parentTaskId": 33
+        },
+        {
+          "id": 7,
+          "title": "Set Up Monitoring Dashboard and Metric Tracking",
+          "description": "Configure dashboards for real-time monitoring and track key metrics from logs and Sentry events.",
+          "dependencies": [],
+          "details": "Integrate with tools like Sentry dashboards, Grafana, or Kibana to visualize errors, logs, and custom metrics.\n<info added on 2025-05-30T17:09:42.904Z>\n## Performance Monitoring Dashboard Foundation Completed\n\nSuccessfully implemented basic monitoring dashboard infrastructure as part of Phase 1 database performance optimization:\n\n### Admin Performance Endpoints Deployed:\n- GET /admin/performance - Performance summary with system info and database status\n- GET /admin/performance?type=database - Database statistics and performance metrics\n- GET /admin/performance?type=indexes - Index usage analysis showing all 13 applied indexes\n- GET /admin/performance?type=full_report - Comprehensive performance report with recommendations\n\n### Monitoring Infrastructure:\n- Performance middleware tracks all API response times\n- X-Response-Time and X-Timestamp headers added to responses\n- Slow request logging for requests exceeding 1000ms\n- Structured logging format for performance data\n- Real-time performance metrics collection\n\n### Dashboard Features:\n- System information (platform, versions, uptime)\n- Database performance status and expected improvements\n- Index usage statistics and optimization recommendations\n- Performance recommendations engine\n- Error handling with graceful degradation\n\nNext steps will focus on integrating with Sentry dashboards, Grafana, or Kibana for advanced visualizations and extending with error tracking metrics beyond performance monitoring.\n</info added on 2025-05-30T17:09:42.904Z>",
+          "status": "in-progress",
+          "parentTaskId": 33
+        },
+        {
+          "id": 8,
+          "title": "Conduct Chaos Testing",
+          "description": "Simulate failures and network issues to validate the robustness of error handling, logging, and fallback mechanisms.",
+          "dependencies": [],
+          "details": "Perform controlled fault injection to ensure the system handles errors gracefully and all monitoring/feedback mechanisms function as intended.",
+          "status": "pending",
+          "parentTaskId": 33
+        },
+        {
+          "id": 9,
+          "title": "Integrate Sentry with Existing Performance Monitoring",
+          "description": "Connect Sentry error tracking with the existing performance monitoring infrastructure to provide comprehensive observability.",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "Ensure performance metrics from the existing middleware are correlated with Sentry error events. Configure Sentry to capture performance data alongside error information.",
+          "status": "pending",
+          "parentTaskId": 33
+        },
+        {
+          "id": 10,
+          "title": "Enhance Admin Dashboard with Error Metrics",
+          "description": "Extend the existing admin performance dashboard (/admin/performance) to include error tracking metrics and visualizations.",
+          "dependencies": [
+            7,
+            9
+          ],
+          "details": "Add error frequency, types, and impact metrics to the existing admin dashboard. Create new report types specifically for error analysis.",
+          "status": "pending",
+          "parentTaskId": 33
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "Optimize Backend APIs",
+      "description": "Enhance backend APIs with pagination, timestamp filtering, proper indexing, and response optimization to improve performance and reduce data transfer.",
+      "status": "done",
+      "dependencies": [
+        2
+      ],
+      "priority": "medium",
+      "details": "## Phase 1: Database Performance Optimization (COMPLETED)\n\n1. Applied 13 strategic database indexes to production database:\n   - Optimized indexes for messages, photos, follows, and postables tables\n   - Removed 3 redundant indexes after testing\n   - Achieved significant performance improvements across all query types\n\n2. Performance monitoring infrastructure implemented:\n   - Added response time tracking middleware\n   - Implemented X-Response-Time and X-Timestamp headers\n   - Created slow request logging and admin performance endpoints\n\n## Phase 2: API Optimization (PENDING)\n\n1. Modify message retrieval endpoint to support pagination and filtering:\n```\nGET /chat/messages/by_room/{id}?since={timestamp}&limit={count}\n```\n\n2. Implement response optimization with hasMore flags:\n```javascript\n// Node.js/Express API implementation\nrouter.get('/by_room/:id', async (req, res) => {\n  const { id } = req.params;\n  const { since, limit = 50 } = req.query;\n  \n  try {\n    // Query with limit + 1 to determine if there are more messages\n    const messages = await db.query(\n      'SELECT * FROM messages WHERE chat_id = $1 AND created_at > $2 ORDER BY created_at DESC LIMIT $3',\n      [id, since || '1970-01-01', parseInt(limit) + 1]\n    );\n    \n    const hasMore = messages.length > limit;\n    if (hasMore) {\n      messages.pop(); // Remove the extra message\n    }\n    \n    res.json({\n      success: true,\n      data: {\n        messages,\n        hasMore\n      }\n    });\n  } catch (error) {\n    res.status(500).json({\n      success: false,\n      error: 'Failed to retrieve messages'\n    });\n  }\n});\n```\n\n3. Create a batch polling endpoint for multiple chats:\n```\nGET /chat/messages/batch?chatIds=[id1,id2,id3]&since={timestamp}\n```\n\n4. Implement basic message caching on the server to reduce database load\n5. Optimize response payloads by excluding unnecessary fields\n6. Add compression for API responses to reduce bandwidth usage",
+      "testStrategy": "1. Benchmark API performance before and after optimizations\n   - Baseline metrics already established in Phase 1\n   - Compare against 70-90% improvements already achieved\n\n2. Test pagination with various page sizes\n3. Verify 'since' parameter correctly filters messages\n4. Load test APIs with concurrent requests\n5. Verify hasMore flag correctly indicates additional messages\n6. Test batch polling with multiple chat IDs\n7. Measure response sizes before and after payload optimization\n8. Validate that performance monitoring infrastructure accurately tracks improvements",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Database Index Creation and Optimization",
+          "description": "Identify key query patterns and create appropriate indexes to improve database performance",
+          "dependencies": [],
+          "details": "Analyze query patterns to identify frequently accessed columns. Create single-column indexes for high-cardinality columns used in WHERE clauses. Implement composite indexes for multi-column queries. Consider index placement on appropriate filegroups for optimal performance. Avoid over-indexing to prevent write performance degradation.",
+          "status": "done",
+          "parentTaskId": 32,
+          "completionNotes": "Successfully applied 13 strategic database indexes to production. Removed 3 redundant indexes after testing. Achieved 60-90% performance improvements across all query types. Verified all indexes are being used by PostgreSQL query planner."
+        },
+        {
+          "id": 2,
+          "title": "Endpoint Refactoring for Pagination",
+          "description": "Modify API endpoints to support efficient pagination of large result sets",
+          "dependencies": [],
+          "details": "Implement cursor-based pagination using unique identifiers. Add limit/offset parameters to all list endpoints. Ensure pagination parameters are properly validated. Update database queries to support efficient pagination using the newly created indexes.",
+          "status": "done",
+          "parentTaskId": 32
+        },
+        {
+          "id": 3,
+          "title": "Implement Filtering Capabilities",
+          "description": "Add filtering options to API endpoints to reduce unnecessary data transfer",
+          "dependencies": [],
+          "details": "Design a consistent filtering syntax for query parameters. Implement server-side filtering logic that leverages database indexes. Support multiple filter criteria with AND/OR operations. Add validation for filter parameters to prevent performance issues from overly complex queries.",
+          "status": "done",
+          "parentTaskId": 32
+        },
+        {
+          "id": 4,
+          "title": "Response Optimization with hasMore Flag",
+          "description": "Add a hasMore indicator to paginated responses to improve client-side handling",
+          "dependencies": [],
+          "details": "Modify response schema to include a hasMore boolean flag. Update endpoint logic to determine if more results exist beyond the current page. Ensure consistent implementation across all paginated endpoints. Update API documentation to reflect the new response format.",
+          "status": "done",
+          "parentTaskId": 32
+        },
+        {
+          "id": 5,
+          "title": "Batch Polling Endpoint Implementation",
+          "description": "Create an efficient batch polling mechanism for multiple resource updates",
+          "dependencies": [],
+          "details": "Design a batch polling endpoint that accepts multiple resource IDs. Implement efficient database queries using IN clauses with indexed columns. Add timestamp filtering to return only changed resources. Ensure proper error handling for partial batch success scenarios.",
+          "status": "done",
+          "parentTaskId": 32
+        },
+        {
+          "id": 6,
+          "title": "Server-Side Caching Implementation",
+          "description": "Add caching layer to reduce database load for frequently accessed data",
+          "dependencies": [],
+          "details": "Select appropriate caching technology (Redis, Memcached, etc.). Implement cache key generation strategy. Add cache invalidation mechanisms for data modifications. Configure appropriate TTL values based on data volatility. Implement cache warming for critical data paths.",
+          "status": "done",
+          "parentTaskId": 32
+        },
+        {
+          "id": 7,
+          "title": "Payload Minimization Optimization",
+          "description": "Reduce response payload size by implementing field selection capabilities",
+          "dependencies": [],
+          "details": "Add field selection parameters to API endpoints. Implement server-side logic to filter response fields based on client requests. Update ORM/database queries to select only required columns. Ensure backward compatibility for clients not using field selection.",
+          "status": "done",
+          "parentTaskId": 32
+        },
+        {
+          "id": 8,
+          "title": "Response Compression Implementation",
+          "description": "Enable compression for API responses to reduce bandwidth usage",
+          "dependencies": [],
+          "details": "Configure server middleware for gzip/brotli compression. Implement content negotiation to respect Accept-Encoding headers. Set appropriate compression levels balancing CPU usage and compression ratio. Add compression metrics to monitor effectiveness.",
+          "status": "done",
+          "parentTaskId": 32
+        },
+        {
+          "id": 9,
+          "title": "Performance and Load Testing",
+          "description": "Conduct comprehensive testing to validate optimization improvements",
+          "dependencies": [],
+          "details": "Design test scenarios covering various load patterns. Establish performance baselines before optimizations. Measure key metrics including response time, throughput, and resource utilization. Identify bottlenecks and regression issues. Document performance improvements and remaining optimization opportunities.",
+          "status": "done",
+          "parentTaskId": 32
+        },
+        {
+          "id": 10,
+          "title": "Performance Monitoring Infrastructure",
+          "description": "Implement monitoring tools to track API performance metrics",
+          "dependencies": [],
+          "details": "Maintain and enhance the performance monitoring middleware implemented in Phase 1. Ensure X-Response-Time and X-Timestamp headers are consistently applied across all endpoints. Refine slow request logging thresholds based on new performance baselines. Extend admin performance endpoints with additional report types as needed.",
+          "status": "done",
+          "parentTaskId": 32,
+          "completionNotes": "Successfully implemented performance monitoring middleware with response time tracking. Added X-Response-Time and X-Timestamp headers to all API responses. Created slow request logging for requests exceeding 1000ms. Deployed admin performance endpoints with multiple report types."
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Push Notifications & OneSignal Integration",
+      "description": "Implement and optimize push notification system using OneSignal for user engagement, retention, and re-activation across both SSO and Mandible apps with support for segmentation, personalization, and analytics.",
+      "details": "## Implementation Details\n\n### 1. OneSignal SDK Integration\n- Install OneSignal SDK in both applications:\n  ```bash\n  # For Flutter apps\n  flutter pub add onesignal_flutter\n  \n  # For backend services (Node.js)\n  npm install onesignal-node --save\n  ```\n\n- Initialize OneSignal in app startup:\n  ```dart\n  // In main.dart or app initialization\n  await OneSignal.shared.setAppId(\"YOUR_ONESIGNAL_APP_ID\");\n  await OneSignal.shared.promptUserForPushNotificationPermission();\n  ```\n\n### 2. User Identification & Subscription Management\n- Link OneSignal player IDs with user accounts:\n  ```dart\n  // After user authentication\n  OneSignal.shared.setExternalUserId(userId);\n  ```\n\n- Implement notification preferences UI:\n  - Create settings screen with toggles for different notification categories\n  - Store preferences in user profile database\n  - Sync preferences with OneSignal tags\n\n### 3. Notification Types Implementation\n- Implement transactional notifications:\n  - New messages\n  - System alerts\n  - Account updates\n  \n- Implement engagement notifications:\n  - User inactivity reminders\n  - Feature discovery\n  - Content updates\n\n### 4. Segmentation & Personalization\n- Set up user segments based on:\n  ```dart\n  // Example: Adding user to segments\n  OneSignal.shared.sendTags({\n    \"user_type\": userType,\n    \"subscription_level\": subscriptionTier,\n    \"last_active\": DateTime.now().toString(),\n    \"feature_usage\": jsonEncode(featureUsageMetrics)\n  });\n  ```\n  \n- Implement personalized notification templates with dynamic content\n\n### 5. A/B Testing Framework\n- Configure A/B testing through OneSignal dashboard\n- Implement tracking for conversion events:\n  ```dart\n  // Track when user interacts with notification content\n  OneSignal.shared.sendOutcome(\"notification_engagement\", 1.0);\n  ```\n\n### 6. Backend Integration\n- Create notification service in backend:\n  ```typescript\n  // Example Node.js service\n  class NotificationService {\n    private client: OneSignal.Client;\n    \n    constructor() {\n      this.client = new OneSignal.Client(APP_ID, API_KEY);\n    }\n    \n    async sendNotification(params: NotificationParams) {\n      const notification = {\n        contents: { en: params.message },\n        headings: { en: params.title },\n        include_external_user_ids: [params.userId],\n        data: params.additionalData,\n        // Add delivery optimization parameters\n        delayed_option: params.scheduledTime ? \"timezone\" : undefined,\n        delivery_time_of_day: params.optimalDeliveryTime,\n        ttl: 259200 // 3 days\n      };\n      \n      return await this.client.createNotification(notification);\n    }\n  }\n  ```\n\n### 7. Cross-Platform Delivery Optimization\n- Implement platform-specific notification handling\n- Configure rich media notifications for both Android and iOS\n- Set up deep linking configuration:\n  ```dart\n  // Handle notification open events\n  OneSignal.shared.setNotificationOpenedHandler((openResult) {\n    final data = openResult.notification.additionalData;\n    if (data != null && data.containsKey('route')) {\n      navigatorKey.currentState?.pushNamed(data['route'], arguments: data['args']);\n    }\n  });\n  ```\n\n### 8. Analytics Integration\n- Implement notification analytics dashboard\n- Track key metrics:\n  - Delivery rates\n  - Open rates\n  - Conversion rates\n  - Opt-out rates\n- Create automated reporting system\n\n### 9. HIPAA Compliance Integration\n- Ensure notification content follows PHI guidelines\n- Implement secure notification delivery\n- Configure audit logging for notification events\n- Ensure all notification data is encrypted in transit and at rest\n\n### 10. Documentation\n- Create developer documentation for notification system\n- Document user-facing notification preferences\n- Create operational runbook for notification campaigns",
+      "testStrategy": "## Testing Strategy\n\n### 1. Unit Testing\n- Test notification service methods:\n  ```dart\n  test('should correctly format notification payload', () {\n    final service = NotificationService();\n    final payload = service.formatPayload(mockNotificationData);\n    expect(payload.contents.en, equals(mockNotificationData.message));\n    expect(payload.include_external_user_ids, contains(mockNotificationData.userId));\n  });\n  ```\n\n- Test notification preference management:\n  ```dart\n  test('should correctly update user notification preferences', () async {\n    await notificationPreferenceManager.updatePreferences(userId, mockPreferences);\n    final storedPreferences = await userRepository.getNotificationPreferences(userId);\n    expect(storedPreferences, equals(mockPreferences));\n  });\n  ```\n\n### 2. Integration Testing\n- Test OneSignal SDK initialization:\n  ```dart\n  testWidgets('OneSignal initializes correctly', (WidgetTester tester) async {\n    await tester.pumpWidget(MyApp());\n    // Verify OneSignal initialization was called\n    verify(mockOneSignal.setAppId(any)).called(1);\n  });\n  ```\n\n- Test notification delivery pipeline:\n  - Create test notification in staging environment\n  - Verify delivery to test devices\n  - Confirm correct handling of notification data\n\n### 3. End-to-End Testing\n- Create test scenarios for different notification types:\n  - Immediate notifications\n  - Scheduled notifications\n  - Segmented notifications\n  - Personalized notifications\n\n- Test notification interaction flows:\n  - App in foreground\n  - App in background\n  - App closed\n  - Different platforms (iOS, Android, Web)\n\n### 4. A/B Testing Verification\n- Verify A/B test configuration is correctly applied\n- Test conversion tracking for different notification variants\n- Validate analytics data collection\n\n### 5. Performance Testing\n- Measure notification delivery times\n- Test system under high notification volume\n- Verify battery and network usage impact\n\n### 6. Security Testing\n- Verify encryption of notification payloads\n- Test notification permission flows\n- Validate HIPAA compliance measures\n- Perform penetration testing on notification delivery system\n\n### 7. User Acceptance Testing\n- Create test group to evaluate notification experience\n- Collect feedback on notification content and frequency\n- Test notification preferences UI\n\n### 8. Monitoring Setup\n- Implement monitoring for:\n  - Notification delivery success rates\n  - API response times\n  - Error rates\n  - User engagement metrics\n\n### 9. Cross-Platform Verification\n- Test on multiple device types and OS versions\n- Verify consistent behavior across platforms\n- Test deep linking functionality from notifications\n\n### 10. Regression Testing\n- Ensure existing app functionality works with notifications\n- Verify no negative impact on app performance\n- Test backward compatibility with older app versions",
+      "status": "pending",
+      "dependencies": [
+        2,
+        12,
+        7,
+        8,
+        11
+      ],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Integrate OneSignal SDK Across Platforms",
+          "description": "Set up the OneSignal SDK in all target platforms (iOS, Android, etc.) to enable push notification capabilities.",
+          "dependencies": [],
+          "details": "Follow official OneSignal documentation for each platform to ensure proper SDK installation and configuration.",
+          "status": "pending"
+        },
+        {
+          "id": 2,
+          "title": "Implement User Identification Mechanism",
+          "description": "Develop a system to uniquely identify users within the app for targeted notifications.",
+          "dependencies": [],
+          "details": "Map app users to OneSignal player/user IDs and ensure this mapping is securely stored and updated.",
+          "status": "pending"
+        },
+        {
+          "id": 3,
+          "title": "Develop Notification Preference Management",
+          "description": "Allow users to opt in/out and manage their notification preferences within the app.",
+          "dependencies": [],
+          "details": "Create UI and backend logic for users to select notification types and manage their consent.",
+          "status": "pending"
+        },
+        {
+          "id": 4,
+          "title": "Define and Configure Notification Types",
+          "description": "Establish different categories/types of notifications (e.g., transactional, promotional, reminders).",
+          "dependencies": [],
+          "details": "Configure these types in OneSignal and ensure the app and backend can handle them distinctly.",
+          "status": "pending"
+        },
+        {
+          "id": 5,
+          "title": "Implement Segmentation and Personalization",
+          "description": "Enable segmentation of users and personalize notifications based on user data and preferences.",
+          "dependencies": [],
+          "details": "Use OneSignal tags and custom data to segment users and tailor notification content.",
+          "status": "pending"
+        },
+        {
+          "id": 6,
+          "title": "Set Up A/B Testing for Notifications",
+          "description": "Integrate A/B testing capabilities to experiment with different notification content and strategies.",
+          "dependencies": [],
+          "details": "Leverage OneSignal's built-in A/B testing tools to run experiments and analyze results.",
+          "status": "pending"
+        },
+        {
+          "id": 7,
+          "title": "Integrate Backend Notification Services",
+          "description": "Connect the app backend to OneSignal for programmatic notification sending and management.",
+          "dependencies": [],
+          "details": "Implement backend endpoints and logic to trigger notifications via OneSignal's API.",
+          "status": "pending"
+        },
+        {
+          "id": 8,
+          "title": "Implement Analytics and Reporting",
+          "description": "Set up analytics to track notification delivery, open rates, and user engagement.",
+          "dependencies": [],
+          "details": "Utilize OneSignal's analytics dashboard and integrate with internal analytics systems if needed.",
+          "status": "pending"
+        },
+        {
+          "id": 9,
+          "title": "Ensure HIPAA Compliance",
+          "description": "Review and implement all necessary measures to ensure HIPAA compliance for notification data and processes.",
+          "dependencies": [],
+          "details": "Audit data flows, secure PHI, and document compliance measures in accordance with HIPAA requirements.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "title": "Comprehensive Testing & Documentation",
+      "description": "Create thorough test coverage and documentation for all messaging system changes to ensure reliability and maintainability.",
+      "details": "1. Write unit tests for core messaging components:\n   - MessagesController\n   - PollingService\n   - ChatRepository\n   - Unread message tracking\n\n2. Create integration tests for critical flows:\n   - Message sending and persistence\n   - Chat deletion/hiding\n   - Unread message tracking\n   - Error recovery\n\n3. Implement end-to-end tests for key user scenarios:\n   - Send message → close app → reopen → verify message exists\n   - Delete chat → verify only hidden for current user\n   - Receive message → see unread badge → open chat → badge clears\n\n4. Document all API changes:\n```markdown\n## POST /chat/messages\nSends a new message to a chat room.\n\n### Request Body\n```json\n{\n  \"chatId\": \"string\",\n  \"senderId\": \"string\",\n  \"content\": \"string\",\n  \"contentType\": \"text|image|file\"\n}\n```\n\n### Response\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"string\",\n    \"status\": \"sending|sent|delivered|failed\",\n    \"createdAt\": \"timestamp\"\n  }\n}\n```\n```\n\n5. Create troubleshooting guide for common issues:\n   - Message sending failures\n   - Missing messages\n   - Unread count discrepancies\n   - Chat visibility problems\n\n6. Document database schema changes and migration steps\n7. Create performance benchmarks and monitoring guidelines",
+      "testStrategy": "1. Measure test coverage for all components\n2. Verify documentation accuracy with peer review\n3. Test troubleshooting guide with simulated issues\n4. Conduct user acceptance testing with internal team\n5. Verify all tests pass in CI/CD pipeline\n6. Test documentation clarity with developers not familiar with the codebase\n7. Create regression test suite for future changes",
+      "priority": "low",
+      "dependencies": [
+        1,
+        2,
+        5,
+        13,
+        12
+      ],
+      "status": "pending",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Unit Test Coverage per Component",
+          "description": "Develop and execute unit tests for each individual component to ensure all logic branches and edge cases are covered.",
+          "dependencies": [],
+          "details": "Identify all components, write unit tests for each, and measure coverage to ensure completeness.",
+          "status": "pending"
+        },
+        {
+          "id": 2,
+          "title": "Integration Tests for Flows",
+          "description": "Design and implement integration tests that validate the interaction between multiple components within key business flows.",
+          "dependencies": [],
+          "details": "Map out critical flows, create integration tests to cover component interactions, and verify data consistency.",
+          "status": "pending"
+        },
+        {
+          "id": 3,
+          "title": "End-to-End Scenario Tests",
+          "description": "Create end-to-end tests simulating real user scenarios to ensure the system works as expected from start to finish.",
+          "dependencies": [],
+          "details": "Define user journeys, automate scenario tests, and validate system behavior across all layers.",
+          "status": "pending"
+        },
+        {
+          "id": 4,
+          "title": "API Documentation",
+          "description": "Document all API endpoints, including usage examples, parameters, responses, and error codes, following best practices.",
+          "dependencies": [],
+          "details": "Use OpenAPI spec files, provide clear structure, maintain consistency, and keep documentation up-to-date with code changes.",
+          "status": "pending"
+        },
+        {
+          "id": 5,
+          "title": "Troubleshooting Guide Creation",
+          "description": "Develop a troubleshooting guide to help users and developers diagnose and resolve common issues.",
+          "dependencies": [],
+          "details": "Document frequent problems, error messages, and step-by-step solutions, referencing logs and support resources.",
+          "status": "pending"
+        },
+        {
+          "id": 6,
+          "title": "Schema/Migration Documentation",
+          "description": "Document the database schema and all migration steps, including rationale and rollback procedures.",
+          "dependencies": [],
+          "details": "Provide diagrams, table definitions, migration scripts, and change history for database evolution.",
+          "status": "pending"
+        },
+        {
+          "id": 7,
+          "title": "Performance Benchmarks",
+          "description": "Establish and document performance benchmarks for critical system operations and endpoints.",
+          "dependencies": [],
+          "details": "Define key metrics, run load and stress tests, and record baseline performance data for future comparison.",
+          "status": "pending"
+        },
+        {
+          "id": 8,
+          "title": "Regression Suite Setup",
+          "description": "Assemble and automate a regression test suite to ensure new changes do not break existing functionality.",
+          "dependencies": [],
+          "details": "Select representative tests from unit, integration, and end-to-end suites; automate execution and reporting.",
+          "status": "pending"
+        },
+        {
+          "id": 9,
+          "title": "Peer Review Process",
+          "description": "Establish a peer review process for all code, tests, and documentation to ensure quality and consistency.",
+          "dependencies": [],
+          "details": "Define review criteria, assign reviewers, and track feedback and approvals for all deliverables.",
+          "status": "pending"
+        },
+        {
+          "id": 10,
+          "title": "Continuous Improvement and Maintenance",
+          "description": "Set up a process for ongoing maintenance and improvement of tests, documentation, and benchmarks.",
+          "dependencies": [],
+          "details": "Schedule regular reviews, update artifacts as the system evolves, and incorporate feedback from users and developers.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "title": "Development Database Consolidation",
+      "description": "Consolidate 5 separate development databases (mandible-dev, sso-dev, spaces-dev, currentcy, sn-db01) into 2 shared databases to reduce costs by approximately $75/month.",
+      "details": "## Implementation Plan\n\n### 1. Pre-Migration Analysis\n- Document current database schemas, sizes, and usage patterns for all 5 databases:\n  - mandible-dev\n  - sso-dev\n  - spaces-dev\n  - currentcy\n  - sn-db01\n- Identify database compatibility for potential consolidation (PostgreSQL versions, extensions, etc.)\n- Map application dependencies and connection patterns for each database\n\n### 2. Consolidation Strategy\n- Create two new shared database instances:\n  - `shared-app-dev`: Will host mandible-dev, sso-dev, and spaces-dev schemas\n  - `shared-util-dev`: Will host currentcy and sn-db01 schemas\n- Use schema namespacing to prevent table name collisions:\n  ```sql\n  CREATE SCHEMA mandible;\n  CREATE SCHEMA sso;\n  CREATE SCHEMA spaces;\n  CREATE SCHEMA currentcy;\n  CREATE SCHEMA sn;\n  ```\n\n### 3. Migration Scripts\n- Create database dump scripts for each source database:\n  ```bash\n  pg_dump -U username -d mandible-dev > mandible_dump.sql\n  pg_dump -U username -d sso-dev > sso_dump.sql\n  # Repeat for all databases\n  ```\n- Modify dump scripts to include schema prefixes for all tables, views, and functions\n- Create restore scripts for each target database:\n  ```bash\n  psql -U username -d shared-app-dev -f mandible_dump_modified.sql\n  psql -U username -d shared-app-dev -f sso_dump_modified.sql\n  # Repeat for all databases\n  ```\n\n### 4. Connection String Updates\n- Update all application configuration files to use new connection strings:\n  - Update database URLs in environment files (.env)\n  - Update connection strings in application code\n  - Example updates:\n    ```\n    # Old\n    DATABASE_URL=postgres://user:password@mandible-dev.example.com:5432/mandible\n    \n    # New\n    DATABASE_URL=postgres://user:password@shared-app-dev.example.com:5432/shared_app?schema=mandible\n    ```\n- Update ORM configurations to use schema prefixes:\n  ```javascript\n  // Prisma example\n  datasource db {\n    provider = \"postgresql\"\n    url      = env(\"DATABASE_URL\")\n    schemas  = [\"mandible\"]\n  }\n  ```\n\n### 5. Migration Execution\n- Schedule maintenance window for migration (off-hours)\n- Create backup of all existing databases\n- Execute migration scripts in sequence\n- Verify data integrity after migration\n\n### 6. Post-Migration Verification\n- Run database integrity checks\n- Verify all application functionality with new database configuration\n- Monitor performance to ensure no degradation\n- Document new database architecture",
+      "testStrategy": "## Test Strategy\n\n### 1. Pre-Migration Testing\n- Create test instances of the consolidated databases in a staging environment\n- Run database schema validation tests:\n  ```bash\n  # Compare schema objects between original and consolidated DBs\n  pg_dump -s original_db > original_schema.sql\n  pg_dump -s -n schema_name consolidated_db > consolidated_schema.sql\n  diff original_schema.sql consolidated_schema.sql\n  ```\n- Verify all tables, indexes, constraints, and stored procedures are correctly migrated\n\n### 2. Connection String Testing\n- Create test configuration files with updated connection strings\n- Verify applications can connect to the new databases with updated connection strings\n- Test connection pooling and concurrent connections to ensure performance\n\n### 3. Functional Testing\n- Create a test matrix covering all applications that use the affected databases\n- For each application:\n  - Run all existing automated tests against the new database configuration\n  - Perform manual testing of critical paths\n  - Verify CRUD operations work correctly with the new schema prefixes\n  - Test transaction integrity across multiple operations\n\n### 4. Performance Testing\n- Benchmark query performance before and after consolidation:\n  ```sql\n  EXPLAIN ANALYZE SELECT * FROM critical_table WHERE condition;\n  ```\n- Run load tests to verify performance under concurrent user scenarios\n- Monitor database metrics during testing:\n  - CPU usage\n  - Memory usage\n  - I/O operations\n  - Connection count\n  - Query execution time\n\n### 5. Rollback Testing\n- Verify rollback procedures work correctly\n- Test ability to restore from backups if needed\n- Document rollback time requirements\n\n### 6. Post-Migration Validation\n- Verify data counts match between original and consolidated databases:\n  ```sql\n  SELECT COUNT(*) FROM original_db.table;\n  SELECT COUNT(*) FROM consolidated_db.schema.table;\n  ```\n- Run data integrity checks on critical tables\n- Verify all foreign key relationships work correctly\n- Monitor application logs for database-related errors\n- Verify cost reduction by comparing DigitalOcean billing before and after consolidation",
+      "status": "pending",
+      "dependencies": [
+        21
+      ],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Schema and Usage Documentation",
+          "description": "Catalog and document the schema, structure, and usage patterns of all databases involved in the consolidation. This includes tables, relationships, stored procedures, and data access patterns.",
+          "dependencies": [],
+          "details": "Gather ER diagrams, data dictionaries, and usage logs. Interview stakeholders to understand business-critical data and workflows.",
+          "status": "pending"
+        },
+        {
+          "id": 2,
+          "title": "Compatibility and Dependency Mapping",
+          "description": "Identify and map all dependencies, integrations, and compatibility issues between the databases and connected applications or services.",
+          "dependencies": [],
+          "details": "List all application connections, data pipelines, and external dependencies. Note version differences, data type mismatches, and integration points.",
+          "status": "pending"
+        },
+        {
+          "id": 3,
+          "title": "Consolidation Strategy Design",
+          "description": "Design the overall consolidation approach, including target schema, data mapping, transformation rules, and governance framework.",
+          "dependencies": [],
+          "details": "Define the target database structure, data migration approach (ETL/ELT), and data governance policies. Plan for data standardization and security requirements.",
+          "status": "pending"
+        },
+        {
+          "id": 4,
+          "title": "Migration Script Creation and Testing",
+          "description": "Develop and thoroughly test migration scripts to move and transform data from source databases to the consolidated target.",
+          "dependencies": [],
+          "details": "Write scripts for data extraction, transformation, and loading. Test with sample data to validate accuracy, performance, and error handling.",
+          "status": "pending"
+        },
+        {
+          "id": 5,
+          "title": "Application Configuration Updates",
+          "description": "Update application and service configurations to point to the new consolidated database and ensure compatibility.",
+          "dependencies": [],
+          "details": "Modify connection strings, update ORM mappings, and adjust any hardcoded queries or references to the old databases.",
+          "status": "pending"
+        },
+        {
+          "id": 6,
+          "title": "Migration Execution and Verification",
+          "description": "Execute the migration scripts in the production environment and verify data integrity, completeness, and application functionality.",
+          "dependencies": [],
+          "details": "Perform the migration during a planned window. Run validation checks, compare record counts, and conduct user acceptance testing.",
+          "status": "pending"
+        },
+        {
+          "id": 7,
+          "title": "Post-Migration Monitoring and Rollback Planning",
+          "description": "Monitor the consolidated environment for issues and have a rollback plan in place in case of critical failures.",
+          "dependencies": [],
+          "details": "Set up monitoring for performance, errors, and data anomalies. Document and test rollback procedures to restore previous state if needed.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "title": "Implement Viral Waitlist System with Referral Mechanics",
+      "description": "Develop a viral waitlist system featuring referral tracking, social sharing, gamification, and incentive structures to drive organic user acquisition and maximize viral growth.",
+      "details": "Design and implement a waitlist module that assigns unique referral codes to each user upon signup. Integrate referral tracking so that when a new user signs up using a referral code, both the referrer and referee are credited appropriately. Build a leaderboard and progress tracker to gamify the experience, allowing users to see their position and progress toward rewards. Implement milestone-based rewards (e.g., after 5, 10, 20 referrals) and automate reward distribution. Integrate social media sharing (Facebook, Twitter, LinkedIn, WhatsApp) with pre-filled messages and referral links to encourage viral sharing. Ensure robust analytics to monitor referral sources, conversion rates, and viral coefficient. Secure the system against abuse (e.g., duplicate signups, bots) using CAPTCHAs and email verification. Provide an admin dashboard for monitoring campaign performance and managing rewards. Consider using proven patterns from platforms like LaunchList, Waitlist, and Prefinery for best practices in viral waitlist design and referral gamification.[1][2][3][4][5]",
+      "testStrategy": "1. Register multiple users and verify unique referral codes are generated and tracked correctly. 2. Simulate referral signups and confirm both referrer and referee receive appropriate credit and progress updates. 3. Test social sharing buttons to ensure referral links are correctly formatted and tracked across platforms. 4. Validate leaderboard and progress tracker accuracy as referrals accumulate. 5. Trigger milestone rewards and verify automated reward delivery. 6. Attempt duplicate or fraudulent signups to confirm anti-abuse mechanisms work. 7. Review analytics and admin dashboard for accurate real-time data on user growth, referral sources, and campaign performance.",
+      "status": "pending",
+      "dependencies": [
+        7
+      ],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Referral Code Generation System",
+          "description": "Design and implement a system to generate unique referral codes for each user upon joining the waitlist.",
+          "dependencies": [],
+          "details": "Ensure codes are unique, secure, and easily shareable. Integrate code generation with user signup flow.",
+          "status": "pending"
+        },
+        {
+          "id": 2,
+          "title": "Referral Tracking Mechanism",
+          "description": "Develop backend logic to track referrals made using generated codes, associating new signups with their referrers.",
+          "dependencies": [],
+          "details": "Store referral relationships, update referral counts, and handle edge cases such as duplicate or invalid codes.",
+          "status": "pending"
+        },
+        {
+          "id": 3,
+          "title": "Leaderboard and Gamification Features",
+          "description": "Implement a leaderboard to display top referrers and add gamification elements to encourage competition.",
+          "dependencies": [],
+          "details": "Display rankings, badges, and progress indicators. Ensure real-time updates and fair ranking logic.",
+          "status": "pending"
+        },
+        {
+          "id": 4,
+          "title": "Milestone Rewards System",
+          "description": "Set up milestone-based rewards for users as they reach specific referral thresholds.",
+          "dependencies": [],
+          "details": "Define milestones, automate reward distribution, and notify users upon reaching each milestone.",
+          "status": "pending"
+        },
+        {
+          "id": 5,
+          "title": "Social Sharing Integration",
+          "description": "Integrate social sharing options to allow users to easily share their referral codes across major platforms.",
+          "dependencies": [],
+          "details": "Support sharing via email, Facebook, Twitter, WhatsApp, and other relevant channels. Track shares for analytics.",
+          "status": "pending"
+        },
+        {
+          "id": 6,
+          "title": "Anti-Abuse and Fraud Prevention Mechanisms",
+          "description": "Implement systems to detect and prevent fraudulent referrals and abuse of the waitlist system.",
+          "dependencies": [],
+          "details": "Monitor for suspicious activity, enforce limits, and add verification steps as needed.",
+          "status": "pending"
+        },
+        {
+          "id": 7,
+          "title": "Admin Dashboard Development",
+          "description": "Build an admin dashboard for monitoring waitlist performance, referral analytics, user activity, and managing rewards.",
+          "dependencies": [],
+          "details": "Provide real-time analytics, user management tools, and controls for adjusting campaign parameters.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "title": "Implement Analytics & Business Intelligence Dashboard",
+      "description": "Develop a comprehensive analytics and business intelligence dashboard to track user behavior, conversion funnels, revenue metrics, cohort analysis, retention, and product-market fit indicators.",
+      "details": "Integrate multiple data sources (application backend, payment systems, user engagement trackers) to collect relevant metrics. Design and implement a scalable data pipeline for ingesting, transforming, and storing analytics data. Build backend APIs to expose aggregated metrics such as user engagement, conversion funnels, cohort retention, and revenue analytics. Develop a user-friendly, customizable dashboard UI featuring interactive charts, graphs, heat maps, and real-time data updates. Ensure the dashboard supports drill-downs, segmentation, and filtering by cohort, time period, and user attributes. Incorporate business intelligence features for actionable insights, including trend analysis and anomaly detection. Prioritize data privacy and security, especially for sensitive user and revenue data. Align dashboard KPIs with business goals and allow for future extensibility as new metrics or data sources are required.",
+      "testStrategy": "1. Validate data pipeline accuracy by comparing dashboard metrics with raw data sources. 2. Test dashboard UI for usability, responsiveness, and correct visualization of all tracked metrics. 3. Simulate user flows to ensure conversion funnels and cohort analyses reflect actual user behavior. 4. Verify real-time updates and filtering functionality. 5. Conduct security and privacy audits on analytics data handling. 6. Solicit stakeholder feedback to confirm dashboard aligns with business objectives and supports data-driven decision making.",
+      "status": "pending",
+      "dependencies": [
+        22
+      ],
+      "priority": "medium",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Data Source Integration",
+          "description": "Identify, connect, and securely integrate data sources relevant to healthcare and educational KPIs, ensuring compatibility with HIPAA and FERPA requirements.",
+          "dependencies": [],
+          "details": "Include EHRs, LMS, SIS, and other relevant systems. Use secure connectors and data mapping for structured ingestion.",
+          "status": "pending"
+        },
+        {
+          "id": 2,
+          "title": "Data Pipeline Setup",
+          "description": "Design and implement ETL/ELT pipelines for real-time and batch data processing, ensuring data quality, lineage, and compliance.",
+          "dependencies": [],
+          "details": "Leverage scalable tools (e.g., Apache Kafka, Airflow) and implement validation, transformation, and monitoring steps.",
+          "status": "pending"
+        },
+        {
+          "id": 3,
+          "title": "Backend API Development",
+          "description": "Develop secure, scalable RESTful or GraphQL APIs to serve processed analytics data to frontend dashboards and external systems.",
+          "dependencies": [
+            5
+          ],
+          "details": "Implement authentication, authorization, and rate limiting. Ensure APIs expose endpoints for cohort/funnel analysis and KPI retrieval.",
+          "status": "pending"
+        },
+        {
+          "id": 4,
+          "title": "Dashboard UI Implementation",
+          "description": "Design and build intuitive, customizable dashboard interfaces for healthcare and education users, following best practices for clarity and usability.",
+          "dependencies": [
+            6
+          ],
+          "details": "Use interactive visualizations, filters, and drill-downs. Prioritize accessibility, logical layout, and responsive design.",
+          "status": "pending"
+        },
+        {
+          "id": 5,
+          "title": "Real-Time Updates and Streaming",
+          "description": "Enable real-time data updates and push notifications for dashboards, supporting live monitoring of user engagement and platform health.",
+          "dependencies": [
+            5
+          ],
+          "details": "Implement WebSockets or server-sent events for live data feeds. Ensure minimal latency and robust error handling.",
+          "status": "pending"
+        },
+        {
+          "id": 6,
+          "title": "Cohort and Funnel Analysis Module",
+          "description": "Develop analytics modules for cohort tracking and funnel analysis, tailored to healthcare outcomes and educational progress metrics.",
+          "dependencies": [
+            6
+          ],
+          "details": "Support segmentation by demographics, intervention, or engagement. Provide visual breakdowns and trend analysis.",
+          "status": "pending"
+        },
+        {
+          "id": 7,
+          "title": "Security, Privacy, and Compliance Implementation",
+          "description": "Enforce HIPAA, FERPA, and industry-specific security/privacy controls across all layers, including data encryption, access controls, and audit logging.",
+          "dependencies": [
+            5,
+            6
+          ],
+          "details": "Conduct regular compliance audits, implement role-based access, and ensure secure data visualization practices.",
+          "status": "pending"
+        },
+        {
+          "id": 8,
+          "title": "KPI Validation and Compliance Reporting",
+          "description": "Establish automated validation of KPIs and generate compliance-ready reports for healthcare and educational stakeholders.",
+          "dependencies": [
+            6,
+            1,
+            2
+          ],
+          "details": "Implement data quality checks, anomaly detection, and exportable audit/compliance reports for regulatory review.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "title": "Production Database Right-Sizing",
+      "description": "Analyze production database usage patterns for mandible-prod and sso-prod (currently 2-node clusters) to determine if single-node configurations are sufficient, and implement a gradual migration to reduce costs by $50-100/month while maintaining performance and reliability.",
+      "details": "## Implementation Plan\n\n### 1. Database Usage Analysis\n1. Collect and analyze database metrics from both mandible-prod and sso-prod clusters:\n   ```bash\n   # Connect to production databases\n   ssh user@mandible-prod-server\n   ssh user@sso-prod-server\n   \n   # Collect key performance metrics\n   psql -c \"SELECT * FROM pg_stat_statements ORDER BY total_exec_time DESC LIMIT 50;\"\n   psql -c \"SELECT * FROM pg_stat_database WHERE datname IN ('mandible', 'sso');\"\n   psql -c \"SELECT * FROM pg_stat_activity;\"\n   ```\n\n2. Analyze resource utilization patterns:\n   - CPU usage (average and peak)\n   - Memory consumption\n   - Disk I/O operations\n   - Connection counts\n   - Query performance and frequency\n\n3. Document baseline performance metrics:\n   - Response times for critical queries\n   - Transaction throughput\n   - Replication lag (if applicable)\n   - Peak load handling capacity\n\n### 2. Feasibility Assessment\n1. Compare current utilization against single-node capacity:\n   - Create a detailed report showing current vs. projected resource usage\n   - Identify potential bottlenecks in a single-node configuration\n   - Calculate expected cost savings ($50-100/month target)\n\n2. Risk assessment:\n   - Document potential failure scenarios\n   - Analyze impact on high-traffic periods\n   - Evaluate data redundancy and backup strategies for single-node setup\n\n3. Create migration decision matrix with criteria:\n   - Performance impact\n   - Cost savings\n   - Reliability considerations\n   - Operational complexity\n\n### 3. Migration Planning\n1. Design a gradual migration approach:\n   ```\n   Phase 1: Test environment migration and benchmarking\n   Phase 2: Migrate sso-prod (typically lower traffic)\n   Phase 3: Migrate mandible-prod during low-usage window\n   ```\n\n2. Create rollback plan:\n   - Document specific triggers for rollback decision\n   - Prepare scripts for quick restoration of 2-node clusters\n   - Define monitoring thresholds that would trigger rollback\n\n3. Update infrastructure-as-code configurations:\n   - Modify Terraform/Ansible scripts to reflect new configuration\n   - Create configuration templates for both single and multi-node setups\n\n### 4. Implementation\n1. Set up enhanced monitoring:\n   ```bash\n   # Install additional monitoring tools if needed\n   apt-get install prometheus-node-exporter\n   \n   # Configure alerting thresholds\n   cat > /etc/prometheus/alert_rules.yml << EOF\n   - alert: DatabaseHighLoad\n     expr: rate(node_cpu_seconds_total{mode=\"system\"}[1m]) > 0.8\n     for: 5m\n     labels:\n       severity: warning\n     annotations:\n       summary: \"High database load detected\"\n       description: \"Database server is experiencing high load\"\n   EOF\n   ```\n\n2. Execute test environment migration:\n   - Migrate test environment to single-node\n   - Run performance benchmarks\n   - Simulate failure scenarios\n   - Document results and adjust production plan if needed\n\n3. Execute production migration (per database):\n   - Schedule maintenance window\n   - Create full database backup\n   - Modify configuration to single-node\n   - Verify replication is disabled\n   - Update connection strings if needed\n   - Perform validation tests\n\n### 5. Post-Migration Optimization\n1. Fine-tune database parameters for single-node operation:\n   ```\n   # Example PostgreSQL optimizations for single-node\n   max_connections = 200\n   shared_buffers = 4GB\n   effective_cache_size = 12GB\n   maintenance_work_mem = 1GB\n   ```\n\n2. Implement enhanced backup strategy:\n   - Increase backup frequency\n   - Verify point-in-time recovery capability\n   - Test restoration procedures\n\n3. Document new architecture:\n   - Update system diagrams\n   - Revise disaster recovery procedures\n   - Update runbooks for operations team",
+      "testStrategy": "## Test Strategy\n\n### 1. Pre-Migration Testing\n1. Create load testing scenarios that simulate production traffic:\n   ```bash\n   # Using pgbench for load testing\n   pgbench -i -s 50 mandible  # Initialize with scale factor 50\n   pgbench -c 20 -j 4 -T 600 mandible  # 20 clients, 4 threads, 10 minutes\n   ```\n\n2. Benchmark current 2-node performance:\n   - Record query response times for critical API endpoints\n   - Measure throughput (transactions per second)\n   - Document resource utilization patterns\n   - Test failover scenarios and recovery times\n\n3. Simulate single-node configuration in test environment:\n   - Deploy identical database schema and similar data volume\n   - Run the same benchmarks as on production\n   - Compare results against 2-node baseline\n\n### 2. Migration Validation Tests\n1. Database integrity verification:\n   ```sql\n   -- Check for data consistency\n   SELECT COUNT(*) FROM users;\n   SELECT COUNT(*) FROM messages;\n   SELECT COUNT(*) FROM chat_rooms;\n   \n   -- Verify indexes are properly created\n   SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'messages';\n   ```\n\n2. Performance validation:\n   - Run timed queries on critical tables\n   - Verify connection handling under load\n   - Test concurrent write operations\n   - Measure query plan execution times\n\n3. Application integration testing:\n   - Verify all API endpoints function correctly\n   - Test chat message delivery and persistence\n   - Validate authentication flows through SSO\n   - Check real-time updates via polling infrastructure\n\n### 3. Monitoring and Alerting Verification\n1. Confirm monitoring tools are capturing key metrics:\n   - CPU, memory, disk I/O\n   - Query performance statistics\n   - Connection counts and states\n   - Error rates and log entries\n\n2. Test alerting thresholds:\n   - Simulate high load conditions\n   - Verify alerts are triggered appropriately\n   - Confirm alert notifications reach operations team\n\n3. Validate dashboard visibility:\n   - Ensure all critical metrics are visible on dashboards\n   - Verify historical data is being retained\n   - Test dashboard access for operations team\n\n### 4. Rollback Testing\n1. Practice rollback procedure in test environment:\n   - Document exact steps and commands\n   - Measure time required for complete rollback\n   - Verify application functionality after rollback\n\n2. Prepare rollback decision criteria:\n   - Define specific performance thresholds that trigger rollback\n   - Document approval process for rollback decision\n   - Create checklist for post-rollback verification\n\n### 5. Post-Migration Verification\n1. Continuous performance monitoring:\n   - Compare metrics against pre-migration baseline\n   - Monitor for 7 days with special attention to peak usage periods\n   - Document any performance degradation\n\n2. Cost verification:\n   - Confirm actual cost savings match projected $50-100/month\n   - Document ROI and performance trade-offs\n\n3. Reliability testing:\n   - Conduct regular backup and restore tests\n   - Verify point-in-time recovery capabilities\n   - Document recovery time objectives (RTO) and actual recovery times",
+      "status": "pending",
+      "dependencies": [
+        21
+      ],
+      "priority": "medium",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Performance Metric Collection Setup",
+          "description": "Configure comprehensive monitoring for database performance metrics including CPU utilization, memory usage, disk I/O, and query performance",
+          "dependencies": [],
+          "details": "Implement CloudWatch for RDS instances to track average and maximum CPU utilization, minimum available RAM, and disk I/O metrics. Set up monitoring for at least a four-week period to establish reliable baseline performance data. Configure alerts for metrics exceeding 40% utilization thresholds.",
+          "status": "pending"
+        },
+        {
+          "id": 2,
+          "title": "Workload Pattern Analysis",
+          "description": "Analyze collected performance data to identify usage patterns (steady state, variable but predictable, or dev/test/production cycles)",
+          "dependencies": [],
+          "details": "Categorize workload patterns into steady state, variable but predictable, or dev/test/production cycles. Create time-series visualizations of CPU, memory, and I/O metrics. Identify peak usage periods and determine if they follow predictable schedules. Use AWS Compute Optimizer for pattern recognition and optimization recommendations.",
+          "status": "pending"
+        },
+        {
+          "id": 3,
+          "title": "PostgreSQL-Specific Performance Analysis",
+          "description": "Conduct PostgreSQL-specific analysis of query performance, connection patterns, and database-specific resource utilization",
+          "dependencies": [],
+          "details": "Analyze PostgreSQL logs for slow queries, connection patterns, and lock contention. Use pg_stat_statements to identify resource-intensive queries. Evaluate index usage efficiency and query plan performance. Document PostgreSQL version-specific optimization opportunities.",
+          "status": "pending"
+        },
+        {
+          "id": 4,
+          "title": "Cost Optimization Analysis",
+          "description": "Perform cost analysis of current database configuration and identify potential savings through right-sizing",
+          "dependencies": [],
+          "details": "Calculate current monthly costs for database instances. Compare costs across different instance types that meet performance requirements. Evaluate Reserved Instance options for steady workloads. Analyze potential savings from scaling down overprovisioned resources. Create a cost projection model for different right-sizing scenarios.",
+          "status": "pending"
+        },
+        {
+          "id": 5,
+          "title": "Capacity Planning and Instance Selection",
+          "description": "Develop detailed capacity plan and select optimal instance types based on workload analysis",
+          "dependencies": [],
+          "details": "Define minimum performance requirements for CPU, memory, IOPS, and network throughput. Select appropriate instance types that meet requirements with 20% headroom for growth. Consider specialized instance types for specific workload characteristics. Document capacity planning methodology and justification for selected instances.",
+          "status": "pending"
+        },
+        {
+          "id": 6,
+          "title": "Migration Strategy Development",
+          "description": "Create comprehensive migration plan including timing, methods, and communication protocols",
+          "dependencies": [],
+          "details": "Develop detailed migration runbook with step-by-step procedures. Schedule migration during lowest usage periods based on workload analysis. Define communication plan for stakeholders. Document pre-migration validation checks and success criteria. Create detailed timeline with assigned responsibilities for each migration step.",
+          "status": "pending"
+        },
+        {
+          "id": 7,
+          "title": "Testing Methodology Implementation",
+          "description": "Develop and implement testing plan to validate performance on new instance types before production migration",
+          "dependencies": [],
+          "details": "Create test environment mirroring production configuration. Develop load testing scripts that simulate peak production workloads. Implement performance benchmarking tools to compare current vs. proposed configurations. Define specific performance acceptance criteria including maximum latency, throughput, and error rates.",
+          "status": "pending"
+        },
+        {
+          "id": 8,
+          "title": "Rollback Procedure Development",
+          "description": "Create detailed rollback procedures to quickly restore service in case of migration issues",
+          "dependencies": [],
+          "details": "Document point-in-time recovery procedures. Create automated rollback scripts where possible. Define clear rollback decision criteria based on performance thresholds or error conditions. Establish maximum acceptable downtime before triggering rollback. Test rollback procedures in non-production environment.",
+          "status": "pending"
+        },
+        {
+          "id": 9,
+          "title": "Production Migration Execution",
+          "description": "Execute the migration plan with continuous monitoring and readiness to implement rollback procedures if needed",
+          "dependencies": [],
+          "details": "Follow migration runbook with real-time progress tracking. Implement enhanced monitoring during migration. Conduct post-migration validation tests including performance checks and application functionality verification. Document any deviations from planned procedures and their resolutions.",
+          "status": "pending"
+        },
+        {
+          "id": 10,
+          "title": "Post-Migration Optimization and Documentation",
+          "description": "Monitor performance after migration, implement fine-tuning optimizations, and document the entire process and outcomes",
+          "dependencies": [
+            8
+          ],
+          "details": "Monitor performance for at least two weeks post-migration. Implement fine-tuning optimizations based on actual performance. Document cost savings achieved through right-sizing. Create knowledge transfer documentation for ongoing management. Establish regular review schedule for continued right-sizing opportunities.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "title": "App Instance Tier Optimization",
+      "description": "Optimize DigitalOcean App Platform instances by downgrading development apps from professional to basic tier and analyzing production app instance requirements to achieve $40-60/month savings from development and potential $24/month from production.",
+      "details": "## Implementation Plan\n\n### 1. Development Environment Optimization\n1. Inventory all development app instances:\n   ```bash\n   doctl apps list --format Name,Spec.Name,Tier,Region --tag env:dev\n   ```\n2. Document current specifications for each of the 8 development apps:\n   - Current tier (Professional)\n   - Current resource allocation (CPU/RAM)\n   - Current cost per app\n   - Current usage patterns (from Task 12 analysis)\n\n3. Create downgrade plan for each development app:\n   - Target Basic tier specifications\n   - Document expected savings per app\n   - Identify any potential performance impacts\n   - Schedule maintenance windows for changes\n\n4. Execute downgrades sequentially:\n   ```bash\n   # For each app\n   doctl apps update APP_ID --spec app_spec_basic.yaml\n   ```\n\n5. Monitor post-downgrade performance:\n   - Set up monitoring dashboards for each app\n   - Configure alerts for any performance degradation\n   - Document baseline metrics for comparison\n\n### 2. Production Environment Analysis\n1. Analyze current production app instance configurations:\n   ```bash\n   doctl apps list --format Name,Spec.Name,Tier,Region --tag env:prod\n   ```\n\n2. Focus on API and SSO services:\n   - Document current 2x instance configuration for each\n   - Analyze historical load patterns from DigitalOcean metrics\n   - Identify peak usage times and resource utilization\n   - Calculate redundancy requirements for high availability\n\n3. Develop optimization recommendations:\n   - Evaluate if 2x instances are necessary for both services\n   - Consider load balancing improvements\n   - Analyze potential for auto-scaling instead of fixed instances\n   - Document expected savings ($24/month) and any trade-offs\n\n4. Create implementation plan for production changes:\n   - Risk assessment for each proposed change\n   - Rollback procedures\n   - Testing requirements before implementation\n   - Monitoring requirements post-implementation\n\n### 3. Documentation and Reporting\n1. Create comprehensive documentation of all changes:\n   - Before/after configurations\n   - Cost savings breakdown\n   - Performance impact analysis\n   - Recommendations for future optimization\n\n2. Prepare executive summary for stakeholders:\n   - Total monthly savings achieved\n   - Performance impact summary\n   - Risk mitigation strategies\n   - Future optimization opportunities",
+      "testStrategy": "## Test Strategy\n\n### 1. Development Environment Testing\n1. **Pre-Downgrade Baseline Testing**:\n   - Run performance benchmarks on each development app\n   - Document response times for key API endpoints\n   - Measure resource utilization (CPU, memory, network)\n   - Record baseline metrics in monitoring system\n\n2. **Post-Downgrade Verification**:\n   - Execute the same performance benchmarks after downgrade\n   - Compare response times to baseline\n   - Verify all functionality works as expected\n   - Monitor for any error rate increases\n\n3. **Load Testing**:\n   - Simulate typical development workloads\n   - Verify the Basic tier can handle expected load\n   - Document any performance degradation\n   - Adjust resources if necessary\n\n### 2. Production Environment Analysis Verification\n1. **Historical Data Analysis**:\n   - Verify metrics collection is accurate\n   - Analyze at least 30 days of historical data\n   - Identify peak usage patterns and anomalies\n   - Create visualizations of usage patterns\n\n2. **Simulation Testing**:\n   - Create test environment that mirrors production\n   - Simulate proposed changes (e.g., reducing instances)\n   - Run load tests that match peak production traffic\n   - Measure response times and error rates\n\n3. **Failover Testing**:\n   - Test high-availability configurations\n   - Simulate instance failures\n   - Verify system resilience with proposed changes\n   - Document recovery times\n\n### 3. Financial Verification\n1. **Cost Tracking**:\n   - Set up cost tracking for affected resources\n   - Compare pre-optimization and post-optimization costs\n   - Verify actual savings match projected savings\n   - Document any discrepancies\n\n2. **Long-term Monitoring**:\n   - Monitor performance for 2 weeks after changes\n   - Create weekly reports on performance metrics\n   - Track any support tickets or issues related to changes\n   - Conduct final review meeting to verify optimization success\n\n### 4. Documentation Verification\n1. **Peer Review**:\n   - Have another engineer review all changes\n   - Verify documentation accuracy\n   - Confirm all changes are properly documented\n   - Update runbooks and operational procedures\n\n2. **Stakeholder Sign-off**:\n   - Present results to stakeholders\n   - Get formal approval on changes\n   - Document any feedback or concerns\n   - Create final report with all findings and recommendations",
+      "status": "pending",
+      "dependencies": [
+        21
+      ],
+      "priority": "medium",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Development App Inventory and Baseline Analysis",
+          "description": "Catalog all development app instances, document their current tier, resource usage, and performance baselines to identify optimization opportunities.",
+          "dependencies": [],
+          "details": "Gather data on all development environment app instances, including their current service tier, CPU/memory usage, and historical performance metrics. Establish a baseline for comparison after optimization.",
+          "status": "pending"
+        },
+        {
+          "id": 2,
+          "title": "Downgrade Planning and Execution",
+          "description": "Plan and execute tier downgrades for eligible development app instances based on baseline analysis, ensuring minimal impact on development workflows.",
+          "dependencies": [],
+          "details": "Identify development instances that can be moved to lower-cost tiers (e.g., basic or free) without compromising necessary functionality. Schedule and implement downgrades, coordinating with development teams as needed.",
+          "status": "pending"
+        },
+        {
+          "id": 3,
+          "title": "Production Instance Analysis and Optimization Planning",
+          "description": "Analyze production app instances for resource utilization and performance, and develop an optimization plan that balances cost, performance, and reliability.",
+          "dependencies": [],
+          "details": "Review production instance metrics, assess current tier appropriateness, and identify candidates for consolidation, scaling, or tier adjustment. Develop a plan that considers business-critical requirements and potential risks.",
+          "status": "pending"
+        },
+        {
+          "id": 4,
+          "title": "Monitoring and Performance Validation",
+          "description": "Implement monitoring to track performance and stability post-optimization, validating that changes meet baseline requirements and do not introduce regressions.",
+          "dependencies": [],
+          "details": "Set up or enhance monitoring dashboards and alerts for both development and production environments. Compare post-optimization metrics to established baselines and address any performance or stability issues.",
+          "status": "pending"
+        },
+        {
+          "id": 5,
+          "title": "Documentation and Stakeholder Reporting",
+          "description": "Document all changes, outcomes, and lessons learned, and provide clear reports to stakeholders on cost savings, performance impacts, and next steps.",
+          "dependencies": [],
+          "details": "Compile a comprehensive report detailing the optimization process, before-and-after metrics, cost analysis, and recommendations. Share findings with technical and business stakeholders.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "title": "Infrastructure Cost Analysis",
+      "description": "Analyze current DigitalOcean infrastructure usage patterns, database utilization, and app resource consumption to identify cost optimization opportunities.",
+      "details": "## Implementation Plan\n\n### 1. Data Collection\n1. Use mandible-dev and mandible-prod MCP tools to gather metrics:\n```bash\n# Connect to production environment\nssh user@mandible-prod-server\n\n# Collect database metrics\npg_stat_statements_reset(); # Reset statistics\n# Wait for 24-48 hours to collect representative data\npsql -c \"SELECT * FROM pg_stat_statements ORDER BY total_exec_time DESC LIMIT 50;\" > db_query_stats.csv\n\n# Collect resource usage metrics\ndocker stats --no-stream > container_stats.txt\n```\n\n2. Extract DigitalOcean billing data:\n   - Use DO API to pull detailed usage data\n   - Export last 3 months of billing history\n\n3. Collect application performance metrics:\n   - CPU/Memory usage by service\n   - Network I/O patterns\n   - Storage consumption growth rate\n\n### 2. Analysis\n1. Database optimization:\n   - Identify slow/expensive queries from pg_stat_statements\n   - Analyze index usage and missing indexes\n   - Review connection pooling configuration\n   - Examine query patterns for potential caching opportunities\n\n2. Infrastructure usage patterns:\n   - Map resource consumption to time of day/week\n   - Identify peak usage periods vs. idle periods\n   - Calculate average vs. peak resource utilization\n   - Determine if resources are over-provisioned\n\n3. Cost breakdown by service:\n   - Create spreadsheet with costs allocated by:\n     - Database (storage, compute)\n     - API servers\n     - Background workers\n     - Storage (S3/spaces)\n     - CDN/networking\n\n### 3. Optimization Recommendations\n1. Create detailed report with:\n   - Current cost breakdown\n   - Identified inefficiencies\n   - Specific optimization recommendations with estimated savings\n   - Implementation complexity assessment\n\n2. Prioritize recommendations by:\n   - Potential cost savings\n   - Implementation effort\n   - Risk assessment\n\n3. Specific areas to investigate:\n   - Right-sizing droplets/databases\n   - Reserved instances vs. on-demand pricing\n   - Autoscaling configuration improvements\n   - Database query optimization\n   - Caching strategy enhancements\n   - Storage lifecycle policies",
+      "testStrategy": "## Verification Strategy\n\n### 1. Baseline Measurement\n1. Document current infrastructure costs:\n   - Create spreadsheet with 3-month cost history\n   - Calculate average monthly cost by service\n   - Identify cost trends (increasing/decreasing)\n\n2. Establish performance baselines:\n   - Record current response times for key API endpoints\n   - Document database query performance metrics\n   - Measure resource utilization percentages\n\n### 2. Validation of Analysis\n1. Peer review of collected data:\n   - Have another engineer verify data collection methodology\n   - Confirm metrics are representative of normal usage\n   - Validate cost allocation calculations\n\n2. Test optimization hypotheses:\n   - For database optimizations, run EXPLAIN ANALYZE on proposed query changes\n   - For infrastructure changes, create test environment with proposed configurations\n   - Measure before/after metrics for each recommendation\n\n### 3. Implementation Verification\n1. Implement changes in staging environment first:\n   - Apply recommended optimizations to staging\n   - Monitor for 48-72 hours for stability issues\n   - Compare performance metrics to baseline\n\n2. Gradual production rollout:\n   - Implement low-risk optimizations first\n   - Monitor closely for performance regressions\n   - Document actual cost savings vs. projections\n\n3. Long-term monitoring:\n   - Create dashboard to track ongoing infrastructure costs\n   - Set up alerts for unexpected cost increases\n   - Schedule quarterly review of cost optimization opportunities",
+      "status": "pending",
+      "dependencies": [
+        2
+      ],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Metrics and Billing Data Collection",
+          "description": "Gather all relevant infrastructure metrics and billing data from cloud providers, internal monitoring tools, and financial systems.",
+          "dependencies": [],
+          "details": "Identify data sources, set up data extraction processes, and ensure data completeness and accuracy for subsequent analysis.",
+          "status": "pending"
+        },
+        {
+          "id": 2,
+          "title": "Database Performance and Usage Analysis",
+          "description": "Analyze database performance metrics and usage patterns to understand resource consumption and identify potential bottlenecks.",
+          "dependencies": [],
+          "details": "Review query logs, storage utilization, throughput, latency, and scaling events to assess efficiency and demand.",
+          "status": "pending"
+        },
+        {
+          "id": 3,
+          "title": "Infrastructure Resource Usage Mapping",
+          "description": "Map collected metrics to specific infrastructure resources, linking usage data to compute, storage, networking, and other components.",
+          "dependencies": [],
+          "details": "Correlate resource IDs, tags, and service accounts to build a comprehensive usage inventory.",
+          "status": "pending"
+        },
+        {
+          "id": 4,
+          "title": "Cost Allocation by Service",
+          "description": "Allocate infrastructure costs to individual services, teams, or projects based on usage mapping and billing data.",
+          "dependencies": [],
+          "details": "Apply cost allocation models, such as proportional usage or tagging, to ensure accurate attribution.",
+          "status": "pending"
+        },
+        {
+          "id": 5,
+          "title": "Inefficiency Identification",
+          "description": "Identify areas of inefficiency, such as underutilized resources, over-provisioned services, or redundant infrastructure.",
+          "dependencies": [],
+          "details": "Use performance and cost data to flag anomalies, waste, and optimization opportunities.",
+          "status": "pending"
+        },
+        {
+          "id": 6,
+          "title": "Optimization Recommendation Drafting",
+          "description": "Draft actionable recommendations for infrastructure optimization based on identified inefficiencies and best practices.",
+          "dependencies": [],
+          "details": "Propose changes such as rightsizing, resource consolidation, or service migration to reduce costs and improve efficiency.",
+          "status": "pending"
+        },
+        {
+          "id": 7,
+          "title": "Prioritization and Risk Assessment",
+          "description": "Prioritize optimization recommendations and assess associated risks, dependencies, and potential impact.",
+          "dependencies": [],
+          "details": "Evaluate feasibility, cost savings, implementation complexity, and business risk for each recommendation.",
+          "status": "pending"
+        },
+        {
+          "id": 8,
+          "title": "Reporting and Stakeholder Review",
+          "description": "Compile findings, recommendations, and risk assessments into a comprehensive report for review by stakeholders.",
+          "dependencies": [],
+          "details": "Prepare visualizations, executive summaries, and facilitate review sessions to gather feedback and align on next steps.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "title": "Implement Stripe Payment Integration & Subscription Management",
+      "description": "Integrate Stripe to enable subscription billing, payment processing, and revenue management, including support for subscription plans, payment methods, billing cycles, invoice generation, payment failure handling, and a customer self-service portal.",
+      "details": "1. Set up a Stripe account and obtain API keys for both test and production environments.\n2. Integrate Stripe's backend SDK (e.g., stripe-node, stripe-python) to securely handle payment requests, create customers, manage subscriptions, and process payments. Implement server-side endpoints for creating payment intents, managing webhooks, and handling subscription lifecycle events (creation, renewal, cancellation, payment failures).\n3. Define subscription plans and billing cycles in Stripe Dashboard or via API. Store plan metadata in your application database for reference.\n4. On the frontend, use Stripe Elements or Checkout to securely collect payment details and allow users to select or manage their subscription plans. Ensure PCI compliance by never storing raw card data on your servers.\n5. Implement webhook handlers to listen for events such as invoice creation, payment succeeded/failed, subscription updates, and cancellations. Update your application's billing state accordingly and notify users of payment issues or changes.\n6. Generate and store invoices using Stripe's invoicing features. Provide users with access to their billing history and downloadable invoices.\n7. Integrate Stripe's Customer Portal to allow users to manage their payment methods, view invoices, and update subscription details directly.\n8. Implement robust error handling and logging for all payment and subscription operations. Ensure that failed payments trigger appropriate retry logic and user notifications.\n9. Document the integration and provide admin tools for monitoring revenue, subscription metrics, and payment health.",
+      "testStrategy": "- Use Stripe's test mode and provided test cards to simulate various payment flows, including successful payments, failed payments, and subscription upgrades/downgrades.\n- Verify that users can subscribe, update payment methods, cancel subscriptions, and access billing history through the customer portal.\n- Test webhook handling by simulating Stripe events and ensuring your application updates billing status and notifies users correctly.\n- Confirm that invoices are generated, stored, and accessible to users.\n- Review logs and error handling to ensure all payment failures and edge cases are managed gracefully.\n- Perform end-to-end tests for both new and existing users, covering the full subscription lifecycle.",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Stripe Account Setup with Healthcare and Education Compliance",
+          "description": "Create and configure a Stripe account, ensuring that business information, account settings, and compliance documentation meet healthcare (HIPAA) and educational (PCI DSS) requirements.",
+          "dependencies": [],
+          "details": "Include business verification, tax information, and enable features relevant to healthcare and educational billing. Review Stripe's documentation for healthcare and education verticals.",
+          "status": "pending"
+        },
+        {
+          "id": 2,
+          "title": "PCI DSS Compliance Assessment for Educational Institutions",
+          "description": "Conduct a PCI DSS compliance assessment tailored for educational institutions, including a gap analysis, documentation review, and staff training plan.",
+          "dependencies": [
+            10
+          ],
+          "details": "Review current payment operations, IT infrastructure, and vendor relationships. Prepare policies and procedures for secure cardholder data handling and retention, and plan for ongoing compliance audits.",
+          "status": "pending"
+        },
+        {
+          "id": 3,
+          "title": "API Integration with Secure Payment Patterns",
+          "description": "Integrate Stripe APIs into backend systems using secure coding practices, tokenization, and encrypted communication to ensure PCI DSS and healthcare compliance.",
+          "dependencies": [
+            10,
+            5
+          ],
+          "details": "Use Stripe SDKs and follow secure API authentication, data minimization, and least privilege principles. Document API endpoints and access controls.",
+          "status": "pending"
+        },
+        {
+          "id": 4,
+          "title": "Subscription Plan Configuration for SaaS and Multi-Tenant Models",
+          "description": "Design and implement subscription billing models, supporting SaaS multi-tenant pricing, healthcare recurring payments, and educational institution billing cycles.",
+          "dependencies": [
+            6
+          ],
+          "details": "Configure Stripe products, prices, and plans. Implement logic for tiered pricing, discounts, and custom billing intervals. Document plan mapping for tenants and institutions.",
+          "status": "pending"
+        },
+        {
+          "id": 5,
+          "title": "Frontend Payment UI with Secure Data Handling",
+          "description": "Develop a frontend payment interface using Stripe Elements or Checkout, ensuring secure collection and transmission of payment data.",
+          "dependencies": [
+            6,
+            8
+          ],
+          "details": "Implement client-side validation, tokenization, and avoid direct handling of card data. Ensure UI accessibility and compliance with healthcare and educational branding.",
+          "status": "pending"
+        },
+        {
+          "id": 6,
+          "title": "Webhook Handling for Payment Events",
+          "description": "Set up secure webhook endpoints to process Stripe events such as payment success, subscription updates, and invoice generation.",
+          "dependencies": [
+            6,
+            8
+          ],
+          "details": "Validate webhook signatures, implement idempotency, and log all events for audit purposes. Ensure endpoints are protected and monitored.",
+          "status": "pending"
+        },
+        {
+          "id": 7,
+          "title": "Invoice Management and Customization",
+          "description": "Configure automated and manual invoice generation, delivery, and reconciliation for healthcare, SaaS, and educational billing scenarios.",
+          "dependencies": [
+            8,
+            1
+          ],
+          "details": "Customize invoice templates, support multi-tenant branding, and integrate with accounting systems. Ensure invoices meet regulatory requirements for each industry.",
+          "status": "pending"
+        },
+        {
+          "id": 8,
+          "title": "Customer Portal Implementation",
+          "description": "Deploy a secure customer portal for self-service subscription management, payment history, and invoice downloads.",
+          "dependencies": [
+            2
+          ],
+          "details": "Leverage Stripe's hosted portal or build a custom solution with strong authentication and role-based access. Ensure compliance with privacy and accessibility standards.",
+          "status": "pending"
+        },
+        {
+          "id": 9,
+          "title": "Robust Error Handling and Monitoring",
+          "description": "Implement comprehensive error handling, logging, and alerting for all payment flows, with special attention to compliance and audit requirements.",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "Handle API failures, payment declines, and webhook retries. Set up monitoring dashboards and incident response procedures.",
+          "status": "pending"
+        },
+        {
+          "id": 10,
+          "title": "Admin Tools and Integration Testing",
+          "description": "Develop admin tools for managing subscriptions, payments, and compliance reports. Conduct end-to-end integration testing covering healthcare, education, and SaaS scenarios.",
+          "dependencies": [],
+          "details": "Include test cases for PCI DSS compliance, multi-tenant billing, healthcare payment flows, and error scenarios. Document test results and remediation steps.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "title": "Implement Unread Message Indicators & Count System",
+      "description": "Add unread message count button to the Messages tab and unread notification indicators on chat tiles, including database schema changes for message read tracking, backend APIs, frontend state management, and UI components with real-time polling integration.",
+      "details": "## Implementation Steps\n\n### 1. Database Schema Changes\n- Modify the messages table to track read status:\n```sql\nALTER TABLE messages ADD COLUMN is_read BOOLEAN DEFAULT FALSE;\nALTER TABLE messages ADD COLUMN read_at TIMESTAMP NULL;\n```\n- Create a new table to track unread counts per conversation:\n```sql\nCREATE TABLE conversation_unread_counts (\n  conversation_id INTEGER PRIMARY KEY REFERENCES conversations(id),\n  user_id INTEGER REFERENCES users(id),\n  unread_count INTEGER DEFAULT 0,\n  last_read_message_id INTEGER REFERENCES messages(id),\n  UNIQUE(conversation_id, user_id)\n);\n```\n\n### 2. Backend API Development\n- Create new endpoints:\n  - `GET /api/conversations/{id}/unread-count` - Returns unread count for a specific conversation\n  - `GET /api/users/me/unread-messages-count` - Returns total unread messages across all conversations\n  - `PUT /api/messages/{id}/mark-read` - Mark a specific message as read\n  - `PUT /api/conversations/{id}/mark-read` - Mark all messages in a conversation as read\n\n- Update the MessageService class:\n```java\npublic class MessageService {\n  // Existing methods...\n  \n  public int getUnreadCountForConversation(Long conversationId, Long userId) {\n    return conversationUnreadCountRepository.findByConversationIdAndUserId(conversationId, userId)\n      .map(ConversationUnreadCount::getUnreadCount)\n      .orElse(0);\n  }\n  \n  public int getTotalUnreadCount(Long userId) {\n    return conversationUnreadCountRepository.sumUnreadCountByUserId(userId);\n  }\n  \n  public void markMessageAsRead(Long messageId, Long userId) {\n    Message message = messageRepository.findById(messageId)\n      .orElseThrow(() -> new ResourceNotFoundException(\"Message not found\"));\n      \n    if (!message.isRead() && !message.getSenderId().equals(userId)) {\n      message.setIsRead(true);\n      message.setReadAt(LocalDateTime.now());\n      messageRepository.save(message);\n      \n      // Update unread count\n      updateUnreadCountForConversation(message.getConversationId(), userId);\n    }\n  }\n  \n  public void markConversationAsRead(Long conversationId, Long userId) {\n    List<Message> unreadMessages = messageRepository.findByConversationIdAndIsReadAndSenderIdNot(\n      conversationId, false, userId);\n      \n    unreadMessages.forEach(message -> {\n      message.setIsRead(true);\n      message.setReadAt(LocalDateTime.now());\n    });\n    \n    messageRepository.saveAll(unreadMessages);\n    \n    // Reset unread count\n    ConversationUnreadCount unreadCount = conversationUnreadCountRepository\n      .findByConversationIdAndUserId(conversationId, userId)\n      .orElse(new ConversationUnreadCount(conversationId, userId));\n    \n    unreadCount.setUnreadCount(0);\n    if (!unreadMessages.isEmpty()) {\n      unreadCount.setLastReadMessageId(\n        unreadMessages.stream()\n          .max(Comparator.comparing(Message::getCreatedAt))\n          .map(Message::getId)\n          .orElse(null)\n      );\n    }\n    \n    conversationUnreadCountRepository.save(unreadCount);\n  }\n  \n  private void updateUnreadCountForConversation(Long conversationId, Long userId) {\n    int count = messageRepository.countByConversationIdAndIsReadAndSenderIdNot(\n      conversationId, false, userId);\n      \n    ConversationUnreadCount unreadCount = conversationUnreadCountRepository\n      .findByConversationIdAndUserId(conversationId, userId)\n      .orElse(new ConversationUnreadCount(conversationId, userId));\n      \n    unreadCount.setUnreadCount(count);\n    conversationUnreadCountRepository.save(unreadCount);\n  }\n}\n```\n\n### 3. Frontend State Management\n- Create a new Redux slice for unread messages:\n```javascript\n// src/store/slices/unreadMessagesSlice.js\nimport { createSlice, createAsyncThunk } from '@reduxjs/toolkit';\nimport { messageApi } from '../../api/messageApi';\n\nexport const fetchUnreadCounts = createAsyncThunk(\n  'unreadMessages/fetchUnreadCounts',\n  async () => {\n    const response = await messageApi.getTotalUnreadCount();\n    return response.data;\n  }\n);\n\nexport const fetchConversationUnreadCount = createAsyncThunk(\n  'unreadMessages/fetchConversationUnreadCount',\n  async (conversationId) => {\n    const response = await messageApi.getConversationUnreadCount(conversationId);\n    return { conversationId, count: response.data.count };\n  }\n);\n\nexport const markConversationAsRead = createAsyncThunk(\n  'unreadMessages/markConversationAsRead',\n  async (conversationId) => {\n    await messageApi.markConversationAsRead(conversationId);\n    return conversationId;\n  }\n);\n\nconst unreadMessagesSlice = createSlice({\n  name: 'unreadMessages',\n  initialState: {\n    totalUnread: 0,\n    conversationCounts: {},\n    loading: false,\n    error: null,\n  },\n  reducers: {\n    incrementUnreadCount(state, action) {\n      const { conversationId } = action.payload;\n      state.totalUnread += 1;\n      state.conversationCounts[conversationId] = (state.conversationCounts[conversationId] || 0) + 1;\n    },\n  },\n  extraReducers: (builder) => {\n    builder\n      .addCase(fetchUnreadCounts.fulfilled, (state, action) => {\n        state.totalUnread = action.payload.count;\n        state.loading = false;\n      })\n      .addCase(fetchConversationUnreadCount.fulfilled, (state, action) => {\n        const { conversationId, count } = action.payload;\n        state.conversationCounts[conversationId] = count;\n      })\n      .addCase(markConversationAsRead.fulfilled, (state, action) => {\n        const conversationId = action.payload;\n        const previousCount = state.conversationCounts[conversationId] || 0;\n        state.totalUnread = Math.max(0, state.totalUnread - previousCount);\n        state.conversationCounts[conversationId] = 0;\n      });\n  },\n});\n\nexport const { incrementUnreadCount } = unreadMessagesSlice.actions;\nexport default unreadMessagesSlice.reducer;\n```\n\n### 4. UI Components\n- Create an UnreadBadge component:\n```jsx\n// src/components/UnreadBadge.jsx\nimport React from 'react';\nimport styled from 'styled-components';\n\nconst Badge = styled.div`\n  background-color: #ff3b30;\n  color: white;\n  border-radius: 50%;\n  min-width: 20px;\n  height: 20px;\n  padding: 0 6px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 12px;\n  font-weight: bold;\n  position: absolute;\n  top: ${props => props.top || '-5px'};\n  right: ${props => props.right || '-5px'};\n  \n  ${props => props.count > 99 && `\n    &:after {\n      content: '99+';\n    }\n  `}\n`;\n\nconst UnreadBadge = ({ count, top, right }) => {\n  if (!count || count <= 0) return null;\n  \n  return (\n    <Badge count={count} top={top} right={right}>\n      {count <= 99 ? count : '99+'}\n    </Badge>\n  );\n};\n\nexport default UnreadBadge;\n```\n\n- Update the MessagesTab component:\n```jsx\n// src/components/MessagesTab.jsx\nimport React, { useEffect } from 'react';\nimport { useDispatch, useSelector } from 'react-redux';\nimport { fetchUnreadCounts } from '../store/slices/unreadMessagesSlice';\nimport UnreadBadge from './UnreadBadge';\n\nconst MessagesTab = () => {\n  const dispatch = useDispatch();\n  const { totalUnread } = useSelector(state => state.unreadMessages);\n  \n  return (\n    <div className=\"messages-tab\">\n      <span>Messages</span>\n      <UnreadBadge count={totalUnread} />\n    </div>\n  );\n};\n\nexport default MessagesTab;\n```\n\n- Update the ConversationListItem component:\n```jsx\n// src/components/ConversationListItem.jsx\nimport React, { useEffect } from 'react';\nimport { useDispatch, useSelector } from 'react-redux';\nimport { fetchConversationUnreadCount } from '../store/slices/unreadMessagesSlice';\nimport UnreadBadge from './UnreadBadge';\n\nconst ConversationListItem = ({ conversation }) => {\n  const dispatch = useDispatch();\n  const unreadCount = useSelector(state => \n    state.unreadMessages.conversationCounts[conversation.id] || 0\n  );\n  \n  useEffect(() => {\n    dispatch(fetchConversationUnreadCount(conversation.id));\n  }, [dispatch, conversation.id]);\n  \n  return (\n    <div className=\"conversation-list-item\">\n      <div className=\"avatar\">\n        <img src={conversation.avatar} alt={conversation.name} />\n        {conversation.isOnline && <div className=\"online-indicator\" />}\n      </div>\n      <div className=\"conversation-info\">\n        <div className=\"conversation-name\">{conversation.name}</div>\n        <div className=\"last-message\">{conversation.lastMessage}</div>\n      </div>\n      <div className=\"conversation-metadata\">\n        <div className=\"timestamp\">{conversation.lastMessageTime}</div>\n        <UnreadBadge count={unreadCount} />\n      </div>\n    </div>\n  );\n};\n\nexport default ConversationListItem;\n```\n\n### 5. Real-time Polling Integration\n- Integrate with the Smart Polling Infrastructure:\n```javascript\n// src/services/unreadMessagePollingService.js\nimport { store } from '../store';\nimport { fetchUnreadCounts, fetchConversationUnreadCount, incrementUnreadCount } from '../store/slices/unreadMessagesSlice';\nimport { PollingManager } from './pollingManager';\n\nexport const registerUnreadMessagePolling = () => {\n  // Register global unread count polling\n  PollingManager.register({\n    context: 'notifications',\n    callback: () => {\n      store.dispatch(fetchUnreadCounts());\n    },\n    initialInterval: 30000, // 30 seconds\n    minInterval: 15000,     // 15 seconds\n    maxInterval: 120000     // 2 minutes\n  });\n  \n  // Handle new message events\n  PollingManager.onMessageReceived((message) => {\n    const currentUserId = store.getState().auth.user.id;\n    \n    // Only increment unread count for messages not sent by current user\n    if (message.senderId !== currentUserId) {\n      store.dispatch(incrementUnreadCount({ conversationId: message.conversationId }));\n      \n      // If user is not in the conversation view, update the conversation unread count\n      const activeConversation = store.getState().conversations.activeConversation;\n      if (activeConversation !== message.conversationId) {\n        store.dispatch(fetchConversationUnreadCount(message.conversationId));\n      }\n    }\n  });\n};\n\n// Register conversation-specific polling when viewing a conversation\nexport const registerConversationUnreadPolling = (conversationId) => {\n  return PollingManager.register({\n    context: 'activeChat',\n    callback: () => {\n      store.dispatch(fetchConversationUnreadCount(conversationId));\n    },\n    initialInterval: 10000, // 10 seconds\n    minInterval: 5000,      // 5 seconds\n    maxInterval: 30000      // 30 seconds\n  });\n};\n```\n\n### 6. Message Read Tracking\n- Update the ChatView component to mark messages as read:\n```jsx\n// src/components/ChatView.jsx\nimport React, { useEffect } from 'react';\nimport { useDispatch } from 'react-redux';\nimport { markConversationAsRead } from '../store/slices/unreadMessagesSlice';\n\nconst ChatView = ({ conversationId }) => {\n  const dispatch = useDispatch();\n  \n  useEffect(() => {\n    // Mark conversation as read when viewing it\n    if (conversationId) {\n      dispatch(markConversationAsRead(conversationId));\n    }\n    \n    // Set up polling for this conversation\n    const pollingId = registerConversationUnreadPolling(conversationId);\n    \n    return () => {\n      // Clean up polling when leaving the conversation\n      PollingManager.unregister(pollingId);\n    };\n  }, [dispatch, conversationId]);\n  \n  // Rest of component...\n};\n\nexport default ChatView;\n```\n\n### 7. App Initialization\n- Register unread message polling on app startup:\n```javascript\n// src/App.js\nimport { registerUnreadMessagePolling } from './services/unreadMessagePollingService';\n\nfunction App() {\n  useEffect(() => {\n    // Initialize unread message polling\n    registerUnreadMessagePolling();\n  }, []);\n  \n  // Rest of component...\n}\n```",
+      "testStrategy": "## Testing Strategy\n\n### 1. Database Schema Testing\n- Verify the database schema changes:\n  - Confirm the `is_read` and `read_at` columns are added to the messages table\n  - Validate the creation of the `conversation_unread_counts` table\n  - Test foreign key constraints and default values\n\n### 2. Backend API Testing\n- Unit tests for MessageService:\n  - Test `getUnreadCountForConversation` returns correct count\n  - Test `getTotalUnreadCount` sums all unread messages correctly\n  - Test `markMessageAsRead` updates message status and unread count\n  - Test `markConversationAsRead` marks all messages as read and resets count\n\n- API endpoint tests:\n  - Test `GET /api/conversations/{id}/unread-count` returns correct count\n  - Test `GET /api/users/me/unread-messages-count` returns total unread messages\n  - Test `PUT /api/messages/{id}/mark-read` marks a message as read\n  - Test `PUT /api/conversations/{id}/mark-read` marks all messages in a conversation as read\n\n- Integration tests:\n  - Test unread count updates when a new message is received\n  - Test unread count decreases when messages are read\n  - Test edge cases (e.g., marking already read messages, non-existent messages)\n\n### 3. Frontend State Management Testing\n- Unit tests for Redux slice:\n  - Test initial state is correctly set\n  - Test `incrementUnreadCount` action correctly updates state\n  - Test async thunks (`fetchUnreadCounts`, `fetchConversationUnreadCount`, `markConversationAsRead`)\n  - Test reducers handle all action types correctly\n\n### 4. UI Component Testing\n- Component tests:\n  - Test UnreadBadge renders correctly with different counts\n  - Test UnreadBadge doesn't render when count is 0\n  - Test MessagesTab displays the total unread count\n  - Test ConversationListItem displays the conversation-specific unread count\n\n- Visual regression tests:\n  - Verify badge styling and positioning\n  - Test badge appearance with different count values (1, 2, 99, 100+)\n\n### 5. Real-time Polling Integration Testing\n- Test polling registration:\n  - Verify polling is registered with correct contexts\n  - Test polling intervals adapt based on user activity\n\n- Test message event handling:\n  - Verify unread count increments when a new message is received\n  - Test that messages sent by the current user don't increment unread count\n\n### 6. End-to-End Testing\n- Test complete user flows:\n  - Verify unread indicators appear when a new message arrives\n  - Test that opening a conversation marks messages as read\n  - Verify unread count updates in real-time across the app\n  - Test that indicators disappear when messages are read\n\n- Cross-device testing:\n  - Test synchronization of read status across multiple devices\n  - Verify unread counts are consistent when logging in from different devices\n\n### 7. Performance Testing\n- Test database query performance:\n  - Measure query execution time for unread count calculations\n  - Test with large datasets (thousands of messages and conversations)\n\n- Test polling efficiency:\n  - Monitor network usage during different user activities\n  - Verify polling frequency adjusts based on app state\n\n### 8. Manual Testing Checklist\n- [ ] Verify unread badge appears on Messages tab when there are unread messages\n- [ ] Confirm unread indicators appear on conversation tiles\n- [ ] Check that opening a conversation marks messages as read\n- [ ] Test that unread counts update in real-time when receiving new messages\n- [ ] Verify counts are accurate after app restart\n- [ ] Test behavior when rapidly switching between conversations\n- [ ] Verify performance on low-end devices",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2
+      ],
+      "priority": "high",
+      "subtasks": []
+    }
+  ]
+}

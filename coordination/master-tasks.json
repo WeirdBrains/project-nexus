@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "lastSync": "2025-01-01T00:00:00Z",
+  "repositories": {
+    "project-nexus": "/home/zack-mohorn/Desktop/Code/WeirdBrains/project-nexus",
+    "backend": "/home/zack-mohorn/Desktop/Code/WeirdBrains/backend", 
+    "moire": "/home/zack-mohorn/Desktop/Code/WeirdBrains/moire",
+    "mandible": "/home/zack-mohorn/Desktop/Code/WeirdBrains/mandible_app",
+    "sso_backend": "/home/zack-mohorn/Desktop/Code/WeirdBrains/sso_backend",
+    "accounts": "/home/zack-mohorn/Desktop/Code/WeirdBrains/accounts"
+  },
+  "crossRepoTasks": [],
+  "dependencies": {},
+  "agents": {
+    "factory-ai-backend": {"currentRepo": null, "workload": 0},
+    "factory-ai-frontend": {"currentRepo": null, "workload": 0},
+    "augment-agent": {"currentRepo": null, "workload": 0}
+  }
+}

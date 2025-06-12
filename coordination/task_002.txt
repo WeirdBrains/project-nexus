@@ -1,0 +1,93 @@
+# Task ID: 2
+# Title: Create Smart Polling Infrastructure
+# Status: done
+# Dependencies: 1
+# Priority: high
+# Description: Implement an intelligent polling system that adapts based on user activity, connection quality, and app state to provide real-time updates without excessive battery or network usage.
+# Details:
+## Implemented Components
+
+### 1. **Core Models & Enums**
+- `PollingContext` enum (activeChat, chatList, notifications, feed, userActivity)
+- `AppLifecycleState` enum (active, inactive, background, paused, detached)
+- `UserActivityLevel` enum (active, viewing, idle, unknown)
+- `NetworkQuality` enum (excellent, good, fair, poor, none)
+- `PollingConfig` class with adaptive interval calculation
+
+### 2. **Smart Polling Service**
+- `SmartPollingService` singleton with adaptive polling intervals
+- Network quality detection using connectivity_plus
+- App lifecycle awareness with automatic interval adjustment
+- Failure handling with automatic retry and circuit breaking
+- Configurable polling contexts with different priorities
+
+### 3. **User Activity Tracker**
+- `UserActivityTracker` with WidgetsBindingObserver integration
+- Automatic app lifecycle state detection
+- User activity level tracking with idle/active detection
+- Stream-based state broadcasting for reactive updates
+
+### 4. **Riverpod Integration**
+- Complete provider setup with proper lifecycle management
+- `SmartPollingInitializer` for app-wide initialization
+- Helper providers for recording user activity
+- Status providers for debugging and monitoring
+
+### 5. **Controller Integration**
+- Updated `MessagesController` to use smart polling instead of manual Timer
+- Updated `ChatController` to use smart polling for chat list updates
+- Updated `NotificationsController` to use smart polling for notifications updates
+
+### 6. **App Integration**
+- Integrated smart polling initialization in `MandibleApp`
+- Automatic startup when user is authenticated
+
+## Smart Features Implemented
+
+1. **Adaptive Intervals**: 
+   - Active chat: 2-3s (when user active) → 30s (background)
+   - Chat list: 4-5s → 60s (background)
+   - Notifications: 8-10s → 120s (background)
+   - Ready for feed: 8-10s → 120s (background)
+
+2. **Network Awareness**: Automatically adjusts intervals based on WiFi/mobile/poor connection
+
+3. **App Lifecycle**: Reduces polling when app is backgrounded or user is idle
+
+4. **Failure Handling**: Disables polling after consecutive failures, prevents resource waste
+
+5. **Centralized Management**: Single service manages all polling contexts with unified configuration
+
+6. **Intelligent Updates**: Only triggers state updates when actual changes are detected (implemented for notifications)
+
+## Remaining Tasks
+
+1. Implement feed load time optimization instead of smart polling for feed updates
+2. Implement additional performance optimizations
+3. Add monitoring and analytics for polling behavior
+
+## Feed Optimization Decision
+
+After analysis, we've determined that smart polling for the feed is not cost-effective due to:
+- Low time sensitivity of feed content
+- Very high API call costs (60+ calls per poll)
+- Better alternatives exist (pull-to-refresh, app-resume refresh)
+
+Instead, we'll focus on feed load time optimization which will provide much better ROI.
+
+# Test Strategy:
+1. Unit test the SmartPollingService with different configurations
+2. Test the PollingConfig class with various input parameters
+3. Verify UserActivityTracker correctly detects user states
+4. Measure battery and network usage in different polling scenarios
+5. Test background/foreground transitions with AppLifecycleState changes
+6. Test with varying network conditions (WiFi, cellular, poor connection)
+7. Verify polling correctly adapts to user activity
+8. Performance test to ensure polling doesn't impact UI responsiveness
+9. Test message delivery latency under different polling configurations
+10. Test failure handling and circuit breaking functionality
+11. Verify Riverpod integration and provider lifecycle management
+12. Test NotificationsController with the smart polling system to verify it correctly detects and updates only when changes occur
+13. Verify proper cleanup and disposal of notification polling resources
+14. Test feed load time optimizations including parallel fetching, progressive loading, and pull-to-refresh functionality
+15. Measure and compare feed load times before and after optimization

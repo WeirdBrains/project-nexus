@@ -1,0 +1,272 @@
+# Task ID: 19
+# Title: Production Database Right-Sizing
+# Status: pending
+# Dependencies: 21
+# Priority: medium
+# Description: Analyze production database usage patterns for mandible-prod and sso-prod (currently 2-node clusters) to determine if single-node configurations are sufficient, and implement a gradual migration to reduce costs by $50-100/month while maintaining performance and reliability.
+# Details:
+## Implementation Plan
+
+### 1. Database Usage Analysis
+1. Collect and analyze database metrics from both mandible-prod and sso-prod clusters:
+   ```bash
+   # Connect to production databases
+   ssh user@mandible-prod-server
+   ssh user@sso-prod-server
+   
+   # Collect key performance metrics
+   psql -c "SELECT * FROM pg_stat_statements ORDER BY total_exec_time DESC LIMIT 50;"
+   psql -c "SELECT * FROM pg_stat_database WHERE datname IN ('mandible', 'sso');"
+   psql -c "SELECT * FROM pg_stat_activity;"
+   ```
+
+2. Analyze resource utilization patterns:
+   - CPU usage (average and peak)
+   - Memory consumption
+   - Disk I/O operations
+   - Connection counts
+   - Query performance and frequency
+
+3. Document baseline performance metrics:
+   - Response times for critical queries
+   - Transaction throughput
+   - Replication lag (if applicable)
+   - Peak load handling capacity
+
+### 2. Feasibility Assessment
+1. Compare current utilization against single-node capacity:
+   - Create a detailed report showing current vs. projected resource usage
+   - Identify potential bottlenecks in a single-node configuration
+   - Calculate expected cost savings ($50-100/month target)
+
+2. Risk assessment:
+   - Document potential failure scenarios
+   - Analyze impact on high-traffic periods
+   - Evaluate data redundancy and backup strategies for single-node setup
+
+3. Create migration decision matrix with criteria:
+   - Performance impact
+   - Cost savings
+   - Reliability considerations
+   - Operational complexity
+
+### 3. Migration Planning
+1. Design a gradual migration approach:
+   ```
+   Phase 1: Test environment migration and benchmarking
+   Phase 2: Migrate sso-prod (typically lower traffic)
+   Phase 3: Migrate mandible-prod during low-usage window
+   ```
+
+2. Create rollback plan:
+   - Document specific triggers for rollback decision
+   - Prepare scripts for quick restoration of 2-node clusters
+   - Define monitoring thresholds that would trigger rollback
+
+3. Update infrastructure-as-code configurations:
+   - Modify Terraform/Ansible scripts to reflect new configuration
+   - Create configuration templates for both single and multi-node setups
+
+### 4. Implementation
+1. Set up enhanced monitoring:
+   ```bash
+   # Install additional monitoring tools if needed
+   apt-get install prometheus-node-exporter
+   
+   # Configure alerting thresholds
+   cat > /etc/prometheus/alert_rules.yml << EOF
+   - alert: DatabaseHighLoad
+     expr: rate(node_cpu_seconds_total{mode="system"}[1m]) > 0.8
+     for: 5m
+     labels:
+       severity: warning
+     annotations:
+       summary: "High database load detected"
+       description: "Database server is experiencing high load"
+   EOF
+   ```
+
+2. Execute test environment migration:
+   - Migrate test environment to single-node
+   - Run performance benchmarks
+   - Simulate failure scenarios
+   - Document results and adjust production plan if needed
+
+3. Execute production migration (per database):
+   - Schedule maintenance window
+   - Create full database backup
+   - Modify configuration to single-node
+   - Verify replication is disabled
+   - Update connection strings if needed
+   - Perform validation tests
+
+### 5. Post-Migration Optimization
+1. Fine-tune database parameters for single-node operation:
+   ```
+   # Example PostgreSQL optimizations for single-node
+   max_connections = 200
+   shared_buffers = 4GB
+   effective_cache_size = 12GB
+   maintenance_work_mem = 1GB
+   ```
+
+2. Implement enhanced backup strategy:
+   - Increase backup frequency
+   - Verify point-in-time recovery capability
+   - Test restoration procedures
+
+3. Document new architecture:
+   - Update system diagrams
+   - Revise disaster recovery procedures
+   - Update runbooks for operations team
+
+# Test Strategy:
+## Test Strategy
+
+### 1. Pre-Migration Testing
+1. Create load testing scenarios that simulate production traffic:
+   ```bash
+   # Using pgbench for load testing
+   pgbench -i -s 50 mandible  # Initialize with scale factor 50
+   pgbench -c 20 -j 4 -T 600 mandible  # 20 clients, 4 threads, 10 minutes
+   ```
+
+2. Benchmark current 2-node performance:
+   - Record query response times for critical API endpoints
+   - Measure throughput (transactions per second)
+   - Document resource utilization patterns
+   - Test failover scenarios and recovery times
+
+3. Simulate single-node configuration in test environment:
+   - Deploy identical database schema and similar data volume
+   - Run the same benchmarks as on production
+   - Compare results against 2-node baseline
+
+### 2. Migration Validation Tests
+1. Database integrity verification:
+   ```sql
+   -- Check for data consistency
+   SELECT COUNT(*) FROM users;
+   SELECT COUNT(*) FROM messages;
+   SELECT COUNT(*) FROM chat_rooms;
+   
+   -- Verify indexes are properly created
+   SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'messages';
+   ```
+
+2. Performance validation:
+   - Run timed queries on critical tables
+   - Verify connection handling under load
+   - Test concurrent write operations
+   - Measure query plan execution times
+
+3. Application integration testing:
+   - Verify all API endpoints function correctly
+   - Test chat message delivery and persistence
+   - Validate authentication flows through SSO
+   - Check real-time updates via polling infrastructure
+
+### 3. Monitoring and Alerting Verification
+1. Confirm monitoring tools are capturing key metrics:
+   - CPU, memory, disk I/O
+   - Query performance statistics
+   - Connection counts and states
+   - Error rates and log entries
+
+2. Test alerting thresholds:
+   - Simulate high load conditions
+   - Verify alerts are triggered appropriately
+   - Confirm alert notifications reach operations team
+
+3. Validate dashboard visibility:
+   - Ensure all critical metrics are visible on dashboards
+   - Verify historical data is being retained
+   - Test dashboard access for operations team
+
+### 4. Rollback Testing
+1. Practice rollback procedure in test environment:
+   - Document exact steps and commands
+   - Measure time required for complete rollback
+   - Verify application functionality after rollback
+
+2. Prepare rollback decision criteria:
+   - Define specific performance thresholds that trigger rollback
+   - Document approval process for rollback decision
+   - Create checklist for post-rollback verification
+
+### 5. Post-Migration Verification
+1. Continuous performance monitoring:
+   - Compare metrics against pre-migration baseline
+   - Monitor for 7 days with special attention to peak usage periods
+   - Document any performance degradation
+
+2. Cost verification:
+   - Confirm actual cost savings match projected $50-100/month
+   - Document ROI and performance trade-offs
+
+3. Reliability testing:
+   - Conduct regular backup and restore tests
+   - Verify point-in-time recovery capabilities
+   - Document recovery time objectives (RTO) and actual recovery times
+
+# Subtasks:
+## 1. Performance Metric Collection Setup [pending]
+### Dependencies: None
+### Description: Configure comprehensive monitoring for database performance metrics including CPU utilization, memory usage, disk I/O, and query performance
+### Details:
+Implement CloudWatch for RDS instances to track average and maximum CPU utilization, minimum available RAM, and disk I/O metrics. Set up monitoring for at least a four-week period to establish reliable baseline performance data. Configure alerts for metrics exceeding 40% utilization thresholds.
+
+## 2. Workload Pattern Analysis [pending]
+### Dependencies: None
+### Description: Analyze collected performance data to identify usage patterns (steady state, variable but predictable, or dev/test/production cycles)
+### Details:
+Categorize workload patterns into steady state, variable but predictable, or dev/test/production cycles. Create time-series visualizations of CPU, memory, and I/O metrics. Identify peak usage periods and determine if they follow predictable schedules. Use AWS Compute Optimizer for pattern recognition and optimization recommendations.
+
+## 3. PostgreSQL-Specific Performance Analysis [pending]
+### Dependencies: None
+### Description: Conduct PostgreSQL-specific analysis of query performance, connection patterns, and database-specific resource utilization
+### Details:
+Analyze PostgreSQL logs for slow queries, connection patterns, and lock contention. Use pg_stat_statements to identify resource-intensive queries. Evaluate index usage efficiency and query plan performance. Document PostgreSQL version-specific optimization opportunities.
+
+## 4. Cost Optimization Analysis [pending]
+### Dependencies: None
+### Description: Perform cost analysis of current database configuration and identify potential savings through right-sizing
+### Details:
+Calculate current monthly costs for database instances. Compare costs across different instance types that meet performance requirements. Evaluate Reserved Instance options for steady workloads. Analyze potential savings from scaling down overprovisioned resources. Create a cost projection model for different right-sizing scenarios.
+
+## 5. Capacity Planning and Instance Selection [pending]
+### Dependencies: None
+### Description: Develop detailed capacity plan and select optimal instance types based on workload analysis
+### Details:
+Define minimum performance requirements for CPU, memory, IOPS, and network throughput. Select appropriate instance types that meet requirements with 20% headroom for growth. Consider specialized instance types for specific workload characteristics. Document capacity planning methodology and justification for selected instances.
+
+## 6. Migration Strategy Development [pending]
+### Dependencies: None
+### Description: Create comprehensive migration plan including timing, methods, and communication protocols
+### Details:
+Develop detailed migration runbook with step-by-step procedures. Schedule migration during lowest usage periods based on workload analysis. Define communication plan for stakeholders. Document pre-migration validation checks and success criteria. Create detailed timeline with assigned responsibilities for each migration step.
+
+## 7. Testing Methodology Implementation [pending]
+### Dependencies: None
+### Description: Develop and implement testing plan to validate performance on new instance types before production migration
+### Details:
+Create test environment mirroring production configuration. Develop load testing scripts that simulate peak production workloads. Implement performance benchmarking tools to compare current vs. proposed configurations. Define specific performance acceptance criteria including maximum latency, throughput, and error rates.
+
+## 8. Rollback Procedure Development [pending]
+### Dependencies: None
+### Description: Create detailed rollback procedures to quickly restore service in case of migration issues
+### Details:
+Document point-in-time recovery procedures. Create automated rollback scripts where possible. Define clear rollback decision criteria based on performance thresholds or error conditions. Establish maximum acceptable downtime before triggering rollback. Test rollback procedures in non-production environment.
+
+## 9. Production Migration Execution [pending]
+### Dependencies: None
+### Description: Execute the migration plan with continuous monitoring and readiness to implement rollback procedures if needed
+### Details:
+Follow migration runbook with real-time progress tracking. Implement enhanced monitoring during migration. Conduct post-migration validation tests including performance checks and application functionality verification. Document any deviations from planned procedures and their resolutions.
+
+## 10. Post-Migration Optimization and Documentation [pending]
+### Dependencies: 19.8
+### Description: Monitor performance after migration, implement fine-tuning optimizations, and document the entire process and outcomes
+### Details:
+Monitor performance for at least two weeks post-migration. Implement fine-tuning optimizations based on actual performance. Document cost savings achieved through right-sizing. Create knowledge transfer documentation for ongoing management. Establish regular review schedule for continued right-sizing opportunities.
+

@@ -1,0 +1,382 @@
+# Task ID: 7
+# Title: Implement Path-Based Routing for Flutter Web SEO & UX
+# Status: pending
+# Dependencies: 2, 12
+# Priority: high
+# Description: Replace hash-based routing (#/chat/123) with clean path-based routing (/chat/123) to improve SEO, user experience, and social media sharing capabilities.
+# Details:
+## Implementation Plan
+
+### 1. Flutter Code Changes
+1. Modify `main.dart` to enable path URL strategy:
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+
+void main() {
+  // Enable path-based routing instead of hash-based
+  setUrlStrategy(PathUrlStrategy());
+  
+  runApp(MyApp());
+}
+```
+
+2. Update route generation to support clean URLs:
+```dart
+GoRouter router = GoRouter(
+  routes: [
+    GoRoute(
+      path: '/chat/:chatId',
+      builder: (context, state) => ChatScreen(
+        chatId: state.params['chatId']!,
+      ),
+    ),
+    // Other routes...
+  ],
+);
+```
+
+3. Add SEO meta tags for individual pages:
+```dart
+// Create a MetaTagsService
+class MetaTagsService {
+  static void updateMetaTags({
+    required String title,
+    required String description,
+    String? imageUrl,
+    String? canonicalUrl,
+  }) {
+    if (kIsWeb) {
+      document.title = title;
+      
+      // Update meta tags
+      _updateMetaTag('description', description);
+      
+      // Open Graph tags for social sharing
+      _updateMetaTag('og:title', title);
+      _updateMetaTag('og:description', description);
+      if (imageUrl != null) _updateMetaTag('og:image', imageUrl);
+      if (canonicalUrl != null) _updateMetaTag('og:url', canonicalUrl);
+      
+      // Twitter Card tags
+      _updateMetaTag('twitter:card', 'summary_large_image');
+      _updateMetaTag('twitter:title', title);
+      _updateMetaTag('twitter:description', description);
+      if (imageUrl != null) _updateMetaTag('twitter:image', imageUrl);
+    }
+  }
+  
+  static void _updateMetaTag(String property, String content) {
+    // Implementation to update or create meta tags in the document head
+  }
+}
+```
+
+4. Implement dynamic meta tag updates for each route:
+```dart
+class ChatScreen extends StatefulWidget {
+  final String chatId;
+  
+  @override
+  _ChatScreenState createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _updateMetaTags();
+  }
+  
+  Future<void> _updateMetaTags() async {
+    // Fetch chat details
+    final chat = await ChatService.getChatById(widget.chatId);
+    
+    // Update meta tags for this specific chat
+    MetaTagsService.updateMetaTags(
+      title: 'Chat with ${chat.otherParticipant.name}',
+      description: 'Continue your conversation with ${chat.otherParticipant.name}',
+      imageUrl: chat.otherParticipant.profileImage,
+      canonicalUrl: 'https://yourapp.com/chat/${widget.chatId}',
+    );
+  }
+  
+  // Rest of the implementation...
+}
+```
+
+### 2. DigitalOcean App Platform Configuration
+1. Configure Custom Pages in DigitalOcean App Platform:
+   - Navigate to App Platform > Your App > Settings > Custom Pages
+   - Add a catchall route configuration:
+     - Source Path: `/*`
+     - Destination Path: `/index.html`
+   - This ensures all routes are directed to the Flutter app entry point
+
+2. Update build and deploy scripts to ensure proper configuration:
+```yaml
+# In your CI/CD pipeline
+deploy:
+  script:
+    - flutter build web --release
+    - doctl apps update $APP_ID --spec app-spec.yaml
+    # Ensure custom pages configuration is applied
+    - doctl apps update-custom-domain $APP_ID --spec custom-domain-spec.yaml
+```
+
+### 3. Coordinated Deployment Strategy
+1. Create a deployment checklist:
+   - Build Flutter web app with path URL strategy enabled
+   - Deploy updated code to staging environment
+   - Configure DigitalOcean App Platform custom pages
+   - Verify all routes work correctly in staging
+   - Deploy to production with minimal downtime
+
+2. Implement a fallback mechanism during transition:
+```dart
+// In router configuration, temporarily handle both path and hash routes
+GoRouter router = GoRouter(
+  routes: [
+    GoRoute(
+      path: '/chat/:chatId',
+      builder: (context, state) => ChatScreen(
+        chatId: state.params['chatId']!,
+      ),
+    ),
+    // Legacy hash route support during transition
+    GoRoute(
+      path: '/#/chat/:chatId',
+      redirect: (context, state) => '/chat/${state.params['chatId']}',
+    ),
+  ],
+);
+```
+
+### 4. Analytics Integration
+1. Update analytics tracking to work with path-based URLs:
+```dart
+void logPageView(BuildContext context, String screenName) {
+  final String currentPath = GoRouterState.of(context).location;
+  
+  // Log page view to analytics
+  AnalyticsService.logEvent(
+    'page_view',
+    parameters: {
+      'screen_name': screenName,
+      'path': currentPath,
+    },
+  );
+}
+```
+
+### 5. Testing and Validation
+1. Create comprehensive tests for URL handling:
+```dart
+void main() {
+  testWidgets('Path-based routing works correctly', (WidgetTester tester) async {
+    await tester.pumpWidget(MyApp());
+    
+    // Navigate to a chat using path-based URL
+    await navigateTo(tester, '/chat/123');
+    
+    // Verify correct screen is shown
+    expect(find.byType(ChatScreen), findsOneWidget);
+    expect(find.text('Chat ID: 123'), findsOneWidget);
+  });
+}
+```
+
+# Test Strategy:
+## Test Strategy
+
+### 1. Unit Tests
+1. Test URL strategy configuration:
+```dart
+void main() {
+  test('URL strategy is set to PathUrlStrategy', () {
+    // Mock the web plugins
+    final mockWebPlugins = MockFlutterWebPlugins();
+    
+    // Run the app initialization
+    initializeApp();
+    
+    // Verify PathUrlStrategy was set
+    verify(mockWebPlugins.setUrlStrategy(any(that: isA<PathUrlStrategy>()))).called(1);
+  });
+}
+```
+
+2. Test route generation and parameter extraction:
+```dart
+void main() {
+  testWidgets('Route parameters are correctly extracted', (WidgetTester tester) async {
+    await tester.pumpWidget(MyApp());
+    
+    // Navigate to a chat route
+    await navigateTo(tester, '/chat/123');
+    
+    // Verify parameters are extracted correctly
+    final context = tester.element(find.byType(ChatScreen));
+    final params = GoRouterState.of(context).params;
+    expect(params['chatId'], equals('123'));
+  });
+}
+```
+
+3. Test meta tag service:
+```dart
+void main() {
+  test('Meta tags are correctly updated', () {
+    // Mock the document
+    final mockDocument = MockHtmlDocument();
+    
+    // Call the service
+    MetaTagsService.updateMetaTags(
+      title: 'Test Title',
+      description: 'Test Description',
+      imageUrl: 'https://example.com/image.jpg',
+      canonicalUrl: 'https://example.com/chat/123',
+    );
+    
+    // Verify document title was updated
+    verify(mockDocument.title = 'Test Title').called(1);
+    
+    // Verify meta tags were updated
+    verify(mockDocument.updateMetaTag('description', 'Test Description')).called(1);
+    verify(mockDocument.updateMetaTag('og:title', 'Test Title')).called(1);
+    // Additional verifications...
+  });
+}
+```
+
+### 2. Integration Tests
+1. Test navigation flows with path-based URLs:
+```dart
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  
+  testWidgets('Complete navigation flow with path-based URLs', (WidgetTester tester) async {
+    await tester.pumpWidget(MyApp());
+    
+    // Navigate to chat list
+    await navigateTo(tester, '/chats');
+    expect(find.byType(ChatListScreen), findsOneWidget);
+    
+    // Tap on a chat to navigate to detail
+    await tester.tap(find.text('Test User'));
+    await tester.pumpAndSettle();
+    
+    // Verify URL changed to path-based format
+    final context = tester.element(find.byType(ChatScreen));
+    final location = GoRouterState.of(context).location;
+    expect(location, startsWith('/chat/'));
+    expect(location, isNot(contains('#')));
+  });
+}
+```
+
+2. Test deep linking:
+```dart
+void main() {
+  testWidgets('Deep linking works with path-based URLs', (WidgetTester tester) async {
+    // Initialize app with a specific initial route
+    await tester.pumpWidget(MyApp(initialRoute: '/chat/123'));
+    
+    // Verify correct screen is shown immediately
+    expect(find.byType(ChatScreen), findsOneWidget);
+    expect(find.text('Chat ID: 123'), findsOneWidget);
+  });
+}
+```
+
+### 3. Browser Testing
+1. Manual browser testing checklist:
+   - Test direct URL entry in browser address bar
+   - Test browser back/forward navigation
+   - Test page refresh at different routes
+   - Test bookmarking and returning to bookmarked pages
+   - Verify URL format in address bar (no hash symbols)
+
+2. Cross-browser testing matrix:
+   - Chrome (latest)
+   - Firefox (latest)
+   - Safari (latest)
+   - Edge (latest)
+   - Mobile browsers (iOS Safari, Android Chrome)
+
+### 4. SEO Verification
+1. Use Lighthouse to verify SEO scores:
+   - Run Lighthouse audit on key pages
+   - Verify "Crawlable Links" passes
+   - Verify meta tags are correctly rendered
+
+2. Use Google Search Console URL inspection:
+   - Submit key URLs for inspection
+   - Verify Google can render the page correctly
+   - Check for any crawling errors
+
+### 5. Social Media Sharing Tests
+1. Test Open Graph tag rendering:
+   - Use Facebook Sharing Debugger (https://developers.facebook.com/tools/debug/)
+   - Use Twitter Card Validator (https://cards-dev.twitter.com/validator)
+   - Verify preview images, titles, and descriptions appear correctly
+
+2. Manual sharing tests:
+   - Share URLs to various platforms (Facebook, Twitter, LinkedIn, etc.)
+   - Verify preview content appears correctly
+   - Verify clicking shared links navigates to correct page
+
+### 6. Deployment Verification
+1. Pre-deployment checklist:
+   - Verify all tests pass in staging environment
+   - Confirm DigitalOcean App Platform configuration is ready
+
+2. Post-deployment verification:
+   - Verify direct URL access works for all routes
+   - Test navigation between pages
+   - Verify analytics is tracking page views correctly
+   - Check server logs for any 404 errors
+
+# Subtasks:
+## 1. Implement Path URL Strategy in Flutter Code [pending]
+### Dependencies: None
+### Description: Modify the Flutter application to use path-based routing instead of hash-based routing by enabling the PathUrlStrategy and updating route generation.
+### Details:
+1. Add or verify the flutter_web_plugins dependency in pubspec.yaml
+2. Modify main.dart to import flutter_web_plugins and call setUrlStrategy(PathUrlStrategy())
+3. Update GoRouter configuration to support clean URL paths
+4. Implement temporary fallback mechanism to handle both path and hash routes during transition
+5. Test all routes locally to ensure they work without hash symbols
+
+## 2. Configure DigitalOcean App Platform for Path-Based Routing [pending]
+### Dependencies: None
+### Description: Set up the DigitalOcean App Platform to properly handle path-based routing by configuring custom pages and ensuring all routes are directed to the Flutter app entry point.
+### Details:
+1. Navigate to App Platform > Your App > Settings > Custom Pages
+2. Add a catchall route configuration with Source Path: /* and Destination Path: /index.html
+3. Update build and deploy scripts to ensure proper configuration is applied
+4. Create a deployment checklist for coordinated release
+5. Prepare rollback plan in case of issues
+
+## 3. Implement SEO and Meta Tags Service [pending]
+### Dependencies: None
+### Description: Create a service to dynamically update meta tags for each route to improve SEO and social media sharing capabilities.
+### Details:
+1. Create a MetaTagsService class with methods to update document title and meta tags
+2. Implement helper methods to update or create meta tags in the document head
+3. Add support for standard SEO tags, Open Graph tags, and Twitter Card tags
+4. Modify route handlers to call the MetaTagsService when routes change
+5. Implement dynamic meta tag updates in each screen's initState method
+
+## 4. Analytics Integration and Comprehensive Testing [pending]
+### Dependencies: None
+### Description: Update analytics tracking to work with path-based URLs and perform comprehensive testing across platforms and browsers.
+### Details:
+1. Update analytics tracking code to use the new path-based URLs
+2. Create widget tests for URL handling and navigation
+3. Perform cross-browser testing (Chrome, Firefox, Safari, Edge)
+4. Test on mobile browsers to ensure compatibility
+5. Validate SEO implementation using tools like Lighthouse
+6. Test social media sharing to verify link previews work correctly
+7. Create a sitemap with the new clean URLs
+

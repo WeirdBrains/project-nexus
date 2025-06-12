@@ -1,0 +1,38 @@
+{
+  "ai-service-authentication-fix": {
+    "description": "CRITICAL: Fix AI service authentication logout bug and prepare for backend integration",
+    "repositories": ["mandible", "backend", "sso_backend", "project-nexus"],
+    "sequence": [
+      {"repo": "mandible", "tasks": ["isolated-dio-instance", "authentication-persistence", "ai-service-fix"]},
+      {"repo": "project-nexus", "tasks": ["coordination-monitoring", "architecture-documentation", "testing-coordination"]},
+      {"repo": "backend", "tasks": ["ai-case-data-endpoints", "hipaa-compliance-prep"]},
+      {"repo": "sso_backend", "tasks": ["auth-compatibility-validation", "dual-auth-support"]}
+    ],
+    "estimatedDuration": "1 week (critical), 2 weeks (full integration)",
+    "priority": "critical",
+    "coordinationTasks": {
+      "mandible": "Task #3",
+      "project-nexus": "Task #11"
+    },
+    "testingDatabases": ["mandible-dev", "sso-dev"],
+    "deploymentSequence": ["backend", "sso_backend", "mandible"],
+    "futureFeatures": ["case-aware-ai", "hipaa-compliant-data-access", "context-aware-responses"],
+    "architecturePattern": {
+      "immediate": "isolated-dio-instance",
+      "future": "dual-dio-architecture",
+      "security": "hipaa-compliant-encryption",
+      "integration": "context-aware-ai-responses"
+    },
+    "crossRepoCoordination": {
+      "dailyStandups": ["mandible-team", "project-nexus-coordinator"],
+      "weeklySync": ["all-teams"],
+      "documentation": "real-time-updates",
+      "testing": "cross-repository-integration"
+    },
+    "riskMitigation": {
+      "rollbackPlan": "prepared-commits",
+      "monitoring": "authentication-state-tracking",
+      "hotfixReady": "immediate-deployment-capability"
+    }
+  }
+}

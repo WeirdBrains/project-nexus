@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# Simple Cross-Repository Task Synchronization Script
+# This shows you how coordination actually works
+
+echo "🔄 WeirdBrains Cross-Repository Task Sync"
+echo "=========================================="
+
+# Repository paths
+NEXUS="/home/zack-mohorn/Desktop/Code/WeirdBrains/project-nexus"
+BACKEND="/home/zack-mohorn/Desktop/Code/WeirdBrains/backend"
+MOIRE="/home/zack-mohorn/Desktop/Code/WeirdBrains/moire"
+MANDIBLE="/home/zack-mohorn/Desktop/Code/WeirdBrains/mandible_app"
+
+# Function to get task count from a repository
+get_task_count() {
+    local repo_path=$1
+    local repo_name=$2
+    
+    if [ -f "$repo_path/.taskmaster/tasks/tasks.json" ]; then
+        local count=$(jq '.tasks | length' "$repo_path/.taskmaster/tasks/tasks.json" 2>/dev/null || echo "0")
+        echo "  📋 $repo_name: $count tasks"
+    else
+        echo "  ❌ $repo_name: No tasks.json found"
+    fi
+}
+
+# Function to show task status across repositories
+show_cross_repo_status() {
+    echo ""
+    echo "📊 Current Task Status Across All Repositories:"
+    echo "------------------------------------------------"
+    
+    get_task_count "$NEXUS" "project-nexus (coordinator)"
+    get_task_count "$BACKEND" "backend"
+    get_task_count "$MOIRE" "moire"
+    get_task_count "$MANDIBLE" "mandible"
+}
+
+# Function to create a cross-repository task
+create_cross_repo_task() {
+    echo ""
+    echo "🎯 Creating Cross-Repository Task Example:"
+    echo "-------------------------------------------"
+    
+    # This is what REAL coordination looks like:
+    echo "1. Create master task in project-nexus"
+    echo "2. Create dependent tasks in each repository"
+    echo "3. Link them with dependencies"
+    echo "4. Set up status synchronization"
+    
+    echo ""
+    echo "Example coordination flow:"
+    echo "  nexus-1: 'Image Processing Pipeline' (master)"
+    echo "    ├── moire-1: 'AI Model Integration' (dependency)"
+    echo "    ├── backend-1: 'API Endpoints' (depends on moire-1)"
+    echo "    └── mandible-1: 'UI Components' (depends on backend-1)"
+}
+
+# Function to simulate task completion and dependency updates
+simulate_coordination() {
+    echo ""
+    echo "⚡ Simulating Cross-Repository Coordination:"
+    echo "--------------------------------------------"
+    
+    echo "1. Task 'moire-1' completed ✅"
+    echo "   → Checking dependencies..."
+    echo "   → 'backend-1' is now unblocked and ready to work on!"
+    echo "   → Sending Slack notification: 'Backend team: API task is ready'"
+    echo "   → Assigning to factory-ai-backend agent"
+    
+    echo ""
+    echo "2. Task 'backend-1' completed ✅"
+    echo "   → Checking dependencies..."
+    echo "   → 'mandible-1' is now unblocked and ready to work on!"
+    echo "   → Sending Slack notification: 'Frontend team: UI task is ready'"
+    echo "   → Assigning to factory-ai-frontend agent"
+    
+    echo ""
+    echo "3. All subtasks completed ✅"
+    echo "   → Master task 'nexus-1' marked as complete"
+    echo "   → Sending completion report to #development channel"
+    echo "   → Updating project dashboard"
+}
+
+# Main execution
+echo "Current working directory: $(pwd)"
+show_cross_repo_status
+create_cross_repo_task
+simulate_coordination
+
+echo ""
+echo "🚀 This is how coordination works:"
+echo "1. Tasks are linked across repositories with dependencies"
+echo "2. When one task completes, dependent tasks are automatically unblocked"
+echo "3. Notifications are sent to relevant teams/agents"
+echo "4. Progress is tracked centrally in project-nexus"
+echo ""
+echo "To implement this for real, we need:"
+echo "  - GitHub Actions to sync task status"
+echo "  - Slack webhooks for notifications"
+echo "  - Scripts to manage cross-repository dependencies"

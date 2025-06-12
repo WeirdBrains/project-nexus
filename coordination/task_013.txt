@@ -1,0 +1,144 @@
+# Task ID: 13
+# Title: Optimize Backend APIs
+# Status: done
+# Dependencies: 2
+# Priority: medium
+# Description: Enhance backend APIs with pagination, timestamp filtering, proper indexing, and response optimization to improve performance and reduce data transfer.
+# Details:
+## Phase 1: Database Performance Optimization (COMPLETED)
+
+1. Applied 13 strategic database indexes to production database:
+   - Optimized indexes for messages, photos, follows, and postables tables
+   - Removed 3 redundant indexes after testing
+   - Achieved significant performance improvements across all query types
+
+2. Performance monitoring infrastructure implemented:
+   - Added response time tracking middleware
+   - Implemented X-Response-Time and X-Timestamp headers
+   - Created slow request logging and admin performance endpoints
+
+## Phase 2: API Optimization (PENDING)
+
+1. Modify message retrieval endpoint to support pagination and filtering:
+```
+GET /chat/messages/by_room/{id}?since={timestamp}&limit={count}
+```
+
+2. Implement response optimization with hasMore flags:
+```javascript
+// Node.js/Express API implementation
+router.get('/by_room/:id', async (req, res) => {
+  const { id } = req.params;
+  const { since, limit = 50 } = req.query;
+  
+  try {
+    // Query with limit + 1 to determine if there are more messages
+    const messages = await db.query(
+      'SELECT * FROM messages WHERE chat_id = $1 AND created_at > $2 ORDER BY created_at DESC LIMIT $3',
+      [id, since || '1970-01-01', parseInt(limit) + 1]
+    );
+    
+    const hasMore = messages.length > limit;
+    if (hasMore) {
+      messages.pop(); // Remove the extra message
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        messages,
+        hasMore
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve messages'
+    });
+  }
+});
+```
+
+3. Create a batch polling endpoint for multiple chats:
+```
+GET /chat/messages/batch?chatIds=[id1,id2,id3]&since={timestamp}
+```
+
+4. Implement basic message caching on the server to reduce database load
+5. Optimize response payloads by excluding unnecessary fields
+6. Add compression for API responses to reduce bandwidth usage
+
+# Test Strategy:
+1. Benchmark API performance before and after optimizations
+   - Baseline metrics already established in Phase 1
+   - Compare against 70-90% improvements already achieved
+
+2. Test pagination with various page sizes
+3. Verify 'since' parameter correctly filters messages
+4. Load test APIs with concurrent requests
+5. Verify hasMore flag correctly indicates additional messages
+6. Test batch polling with multiple chat IDs
+7. Measure response sizes before and after payload optimization
+8. Validate that performance monitoring infrastructure accurately tracks improvements
+
+# Subtasks:
+## 1. Database Index Creation and Optimization [done]
+### Dependencies: None
+### Description: Identify key query patterns and create appropriate indexes to improve database performance
+### Details:
+Analyze query patterns to identify frequently accessed columns. Create single-column indexes for high-cardinality columns used in WHERE clauses. Implement composite indexes for multi-column queries. Consider index placement on appropriate filegroups for optimal performance. Avoid over-indexing to prevent write performance degradation.
+
+## 2. Endpoint Refactoring for Pagination [done]
+### Dependencies: None
+### Description: Modify API endpoints to support efficient pagination of large result sets
+### Details:
+Implement cursor-based pagination using unique identifiers. Add limit/offset parameters to all list endpoints. Ensure pagination parameters are properly validated. Update database queries to support efficient pagination using the newly created indexes.
+
+## 3. Implement Filtering Capabilities [done]
+### Dependencies: None
+### Description: Add filtering options to API endpoints to reduce unnecessary data transfer
+### Details:
+Design a consistent filtering syntax for query parameters. Implement server-side filtering logic that leverages database indexes. Support multiple filter criteria with AND/OR operations. Add validation for filter parameters to prevent performance issues from overly complex queries.
+
+## 4. Response Optimization with hasMore Flag [done]
+### Dependencies: None
+### Description: Add a hasMore indicator to paginated responses to improve client-side handling
+### Details:
+Modify response schema to include a hasMore boolean flag. Update endpoint logic to determine if more results exist beyond the current page. Ensure consistent implementation across all paginated endpoints. Update API documentation to reflect the new response format.
+
+## 5. Batch Polling Endpoint Implementation [done]
+### Dependencies: None
+### Description: Create an efficient batch polling mechanism for multiple resource updates
+### Details:
+Design a batch polling endpoint that accepts multiple resource IDs. Implement efficient database queries using IN clauses with indexed columns. Add timestamp filtering to return only changed resources. Ensure proper error handling for partial batch success scenarios.
+
+## 6. Server-Side Caching Implementation [done]
+### Dependencies: None
+### Description: Add caching layer to reduce database load for frequently accessed data
+### Details:
+Select appropriate caching technology (Redis, Memcached, etc.). Implement cache key generation strategy. Add cache invalidation mechanisms for data modifications. Configure appropriate TTL values based on data volatility. Implement cache warming for critical data paths.
+
+## 7. Payload Minimization Optimization [done]
+### Dependencies: None
+### Description: Reduce response payload size by implementing field selection capabilities
+### Details:
+Add field selection parameters to API endpoints. Implement server-side logic to filter response fields based on client requests. Update ORM/database queries to select only required columns. Ensure backward compatibility for clients not using field selection.
+
+## 8. Response Compression Implementation [done]
+### Dependencies: None
+### Description: Enable compression for API responses to reduce bandwidth usage
+### Details:
+Configure server middleware for gzip/brotli compression. Implement content negotiation to respect Accept-Encoding headers. Set appropriate compression levels balancing CPU usage and compression ratio. Add compression metrics to monitor effectiveness.
+
+## 9. Performance and Load Testing [done]
+### Dependencies: None
+### Description: Conduct comprehensive testing to validate optimization improvements
+### Details:
+Design test scenarios covering various load patterns. Establish performance baselines before optimizations. Measure key metrics including response time, throughput, and resource utilization. Identify bottlenecks and regression issues. Document performance improvements and remaining optimization opportunities.
+
+## 10. Performance Monitoring Infrastructure [done]
+### Dependencies: None
+### Description: Implement monitoring tools to track API performance metrics
+### Details:
+Maintain and enhance the performance monitoring middleware implemented in Phase 1. Ensure X-Response-Time and X-Timestamp headers are consistently applied across all endpoints. Refine slow request logging thresholds based on new performance baselines. Extend admin performance endpoints with additional report types as needed.
+

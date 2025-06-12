@@ -1,0 +1,162 @@
+# Task ID: 12
+# Title: Implement Error Handling & Monitoring
+# Status: pending
+# Dependencies: 1, 2, 13
+# Priority: low
+# Description: Create a comprehensive error handling system with proper logging, user feedback, and monitoring to improve reliability and troubleshooting capabilities, building on the existing performance monitoring foundation.
+# Details:
+## Existing Performance Monitoring Foundation
+
+- Performance monitoring middleware tracks API response times
+- X-Response-Time and X-Timestamp headers added to all API responses
+- Slow request logging for requests exceeding 1000ms
+- Admin performance endpoints (/admin/performance) with multiple report types
+- Structured logging for performance metrics and database operations
+
+## Remaining Implementation Tasks
+
+1. Integrate Sentry for error tracking in both frontend and backend:
+```dart
+// Flutter integration
+void initSentry() {
+  Sentry.init(
+    (options) {
+      options.dsn = 'YOUR_SENTRY_DSN';
+      options.tracesSampleRate = 1.0;
+    },
+  );
+}
+```
+
+2. Implement structured error logging for message operations:
+```dart
+void logMessageError(String operation, String messageId, dynamic error) {
+  Sentry.captureEvent(
+    SentryEvent(
+      level: SentryLevel.error,
+      message: SentryMessage('Message operation failed'),
+      tags: {
+        'operation': operation,
+        'messageId': messageId,
+      },
+    ),
+  );
+}
+```
+
+3. Create user-friendly error messages for common failure scenarios:
+   - Network connectivity issues
+   - Server errors
+   - Permission problems
+   - Timeout errors
+
+4. Implement graceful degradation for API failures:
+   - Offline mode with cached messages
+   - Automatic retry with exponential backoff
+   - Fallback to older messages when new ones can't be fetched
+
+5. Extend existing monitoring for additional key metrics:
+   - Message delivery success rate
+   - Error frequency by type
+   - User-reported issues
+
+6. Enhance the existing admin dashboard to include error monitoring alongside performance metrics
+
+# Test Strategy:
+1. Verify error events are correctly captured in Sentry
+2. Test error handling with simulated API failures
+3. Verify user-friendly error messages appear correctly
+4. Test offline mode and message caching
+5. Verify automatic retry logic works with network fluctuations
+6. Test integration between existing performance monitoring and new error tracking
+7. Verify enhanced monitoring dashboard shows both performance and error metrics
+8. Perform chaos testing by randomly failing different components
+
+# Subtasks:
+## 1. Integrate Sentry in Frontend Application [pending]
+### Dependencies: None
+### Description: Set up Sentry SDK in the frontend codebase, configure DSN, and verify error/event reporting.
+### Details:
+Install @sentry/browser, initialize Sentry with the correct DSN, and test error capture in the frontend application.
+
+## 2. Integrate Sentry in Backend Application [pending]
+### Dependencies: None
+### Description: Set up Sentry SDK in the backend codebase, configure DSN, and verify error/event reporting.
+### Details:
+Install the appropriate Sentry SDK for the backend language (e.g., Python, Node.js), initialize with DSN, and test error capture in the backend application.
+
+## 3. Implement Structured Logging [done]
+### Dependencies: None
+### Description: Adopt a structured logging format (e.g., JSON) in both frontend and backend for consistent log output.
+### Details:
+Configure logging libraries to output logs in a structured format, ensuring logs are easily parsable and can be correlated with Sentry events.
+
+## 4. Develop User Feedback UI [pending]
+### Dependencies: None
+### Description: Create a user interface component for collecting feedback and error reports from users.
+### Details:
+Design and implement a feedback form that can be triggered on error events, optionally integrating with Sentry's user feedback API.
+
+## 5. Implement Offline/Automatic Retry Logic [pending]
+### Dependencies: None
+### Description: Ensure error/event reporting and feedback submission are resilient to network failures by implementing offline storage and retry mechanisms.
+### Details:
+Store failed submissions locally and retry sending them when connectivity is restored, both for Sentry events and user feedback.
+
+## 6. Add Fallback Mechanisms [pending]
+### Dependencies: None
+### Description: Implement graceful degradation strategies for error reporting and feedback in case Sentry or network is unavailable.
+### Details:
+Provide alternative logging or local storage when Sentry is unreachable, and ensure the application remains usable.
+
+## 7. Set Up Monitoring Dashboard and Metric Tracking [in-progress]
+### Dependencies: None
+### Description: Configure dashboards for real-time monitoring and track key metrics from logs and Sentry events.
+### Details:
+Integrate with tools like Sentry dashboards, Grafana, or Kibana to visualize errors, logs, and custom metrics.
+<info added on 2025-05-30T17:09:42.904Z>
+## Performance Monitoring Dashboard Foundation Completed
+
+Successfully implemented basic monitoring dashboard infrastructure as part of Phase 1 database performance optimization:
+
+### Admin Performance Endpoints Deployed:
+- GET /admin/performance - Performance summary with system info and database status
+- GET /admin/performance?type=database - Database statistics and performance metrics
+- GET /admin/performance?type=indexes - Index usage analysis showing all 13 applied indexes
+- GET /admin/performance?type=full_report - Comprehensive performance report with recommendations
+
+### Monitoring Infrastructure:
+- Performance middleware tracks all API response times
+- X-Response-Time and X-Timestamp headers added to responses
+- Slow request logging for requests exceeding 1000ms
+- Structured logging format for performance data
+- Real-time performance metrics collection
+
+### Dashboard Features:
+- System information (platform, versions, uptime)
+- Database performance status and expected improvements
+- Index usage statistics and optimization recommendations
+- Performance recommendations engine
+- Error handling with graceful degradation
+
+Next steps will focus on integrating with Sentry dashboards, Grafana, or Kibana for advanced visualizations and extending with error tracking metrics beyond performance monitoring.
+</info added on 2025-05-30T17:09:42.904Z>
+
+## 8. Conduct Chaos Testing [pending]
+### Dependencies: None
+### Description: Simulate failures and network issues to validate the robustness of error handling, logging, and fallback mechanisms.
+### Details:
+Perform controlled fault injection to ensure the system handles errors gracefully and all monitoring/feedback mechanisms function as intended.
+
+## 9. Integrate Sentry with Existing Performance Monitoring [pending]
+### Dependencies: 12.1, 12.2
+### Description: Connect Sentry error tracking with the existing performance monitoring infrastructure to provide comprehensive observability.
+### Details:
+Ensure performance metrics from the existing middleware are correlated with Sentry error events. Configure Sentry to capture performance data alongside error information.
+
+## 10. Enhance Admin Dashboard with Error Metrics [pending]
+### Dependencies: 12.7, 12.9
+### Description: Extend the existing admin performance dashboard (/admin/performance) to include error tracking metrics and visualizations.
+### Details:
+Add error frequency, types, and impact metrics to the existing admin dashboard. Create new report types specifically for error analysis.
+

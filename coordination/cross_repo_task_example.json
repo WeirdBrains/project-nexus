@@ -1,0 +1,31 @@
+{
+  "crossRepoTasks": [
+    {
+      "id": "nexus-1",
+      "title": "Complete Image Processing Pipeline",
+      "status": "in-progress",
+      "repositories": {
+        "moire": {
+          "tasks": [
+            {"id": "moire-1", "title": "AI Model Integration", "status": "done"},
+            {"id": "moire-2", "title": "Image Processing API", "status": "in-progress"}
+          ]
+        },
+        "backend": {
+          "tasks": [
+            {"id": "backend-5", "title": "Image Upload Endpoint", "status": "pending", "blockedBy": ["moire-2"]},
+            {"id": "backend-6", "title": "Processing Queue", "status": "pending"}
+          ]
+        },
+        "mandible": {
+          "tasks": [
+            {"id": "mandible-12", "title": "Upload UI", "status": "pending", "blockedBy": ["backend-5"]},
+            {"id": "mandible-13", "title": "Progress Display", "status": "pending"}
+          ]
+        }
+      },
+      "criticalPath": ["moire-2", "backend-5", "mandible-12"],
+      "overallProgress": "40%"
+    }
+  ]
+}

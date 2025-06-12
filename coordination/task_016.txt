@@ -1,0 +1,180 @@
+# Task ID: 16
+# Title: Development Database Consolidation
+# Status: pending
+# Dependencies: 21
+# Priority: high
+# Description: Consolidate 5 separate development databases (mandible-dev, sso-dev, spaces-dev, currentcy, sn-db01) into 2 shared databases to reduce costs by approximately $75/month.
+# Details:
+## Implementation Plan
+
+### 1. Pre-Migration Analysis
+- Document current database schemas, sizes, and usage patterns for all 5 databases:
+  - mandible-dev
+  - sso-dev
+  - spaces-dev
+  - currentcy
+  - sn-db01
+- Identify database compatibility for potential consolidation (PostgreSQL versions, extensions, etc.)
+- Map application dependencies and connection patterns for each database
+
+### 2. Consolidation Strategy
+- Create two new shared database instances:
+  - `shared-app-dev`: Will host mandible-dev, sso-dev, and spaces-dev schemas
+  - `shared-util-dev`: Will host currentcy and sn-db01 schemas
+- Use schema namespacing to prevent table name collisions:
+  ```sql
+  CREATE SCHEMA mandible;
+  CREATE SCHEMA sso;
+  CREATE SCHEMA spaces;
+  CREATE SCHEMA currentcy;
+  CREATE SCHEMA sn;
+  ```
+
+### 3. Migration Scripts
+- Create database dump scripts for each source database:
+  ```bash
+  pg_dump -U username -d mandible-dev > mandible_dump.sql
+  pg_dump -U username -d sso-dev > sso_dump.sql
+  # Repeat for all databases
+  ```
+- Modify dump scripts to include schema prefixes for all tables, views, and functions
+- Create restore scripts for each target database:
+  ```bash
+  psql -U username -d shared-app-dev -f mandible_dump_modified.sql
+  psql -U username -d shared-app-dev -f sso_dump_modified.sql
+  # Repeat for all databases
+  ```
+
+### 4. Connection String Updates
+- Update all application configuration files to use new connection strings:
+  - Update database URLs in environment files (.env)
+  - Update connection strings in application code
+  - Example updates:
+    ```
+    # Old
+    DATABASE_URL=postgres://user:password@mandible-dev.example.com:5432/mandible
+    
+    # New
+    DATABASE_URL=postgres://user:password@shared-app-dev.example.com:5432/shared_app?schema=mandible
+    ```
+- Update ORM configurations to use schema prefixes:
+  ```javascript
+  // Prisma example
+  datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+    schemas  = ["mandible"]
+  }
+  ```
+
+### 5. Migration Execution
+- Schedule maintenance window for migration (off-hours)
+- Create backup of all existing databases
+- Execute migration scripts in sequence
+- Verify data integrity after migration
+
+### 6. Post-Migration Verification
+- Run database integrity checks
+- Verify all application functionality with new database configuration
+- Monitor performance to ensure no degradation
+- Document new database architecture
+
+# Test Strategy:
+## Test Strategy
+
+### 1. Pre-Migration Testing
+- Create test instances of the consolidated databases in a staging environment
+- Run database schema validation tests:
+  ```bash
+  # Compare schema objects between original and consolidated DBs
+  pg_dump -s original_db > original_schema.sql
+  pg_dump -s -n schema_name consolidated_db > consolidated_schema.sql
+  diff original_schema.sql consolidated_schema.sql
+  ```
+- Verify all tables, indexes, constraints, and stored procedures are correctly migrated
+
+### 2. Connection String Testing
+- Create test configuration files with updated connection strings
+- Verify applications can connect to the new databases with updated connection strings
+- Test connection pooling and concurrent connections to ensure performance
+
+### 3. Functional Testing
+- Create a test matrix covering all applications that use the affected databases
+- For each application:
+  - Run all existing automated tests against the new database configuration
+  - Perform manual testing of critical paths
+  - Verify CRUD operations work correctly with the new schema prefixes
+  - Test transaction integrity across multiple operations
+
+### 4. Performance Testing
+- Benchmark query performance before and after consolidation:
+  ```sql
+  EXPLAIN ANALYZE SELECT * FROM critical_table WHERE condition;
+  ```
+- Run load tests to verify performance under concurrent user scenarios
+- Monitor database metrics during testing:
+  - CPU usage
+  - Memory usage
+  - I/O operations
+  - Connection count
+  - Query execution time
+
+### 5. Rollback Testing
+- Verify rollback procedures work correctly
+- Test ability to restore from backups if needed
+- Document rollback time requirements
+
+### 6. Post-Migration Validation
+- Verify data counts match between original and consolidated databases:
+  ```sql
+  SELECT COUNT(*) FROM original_db.table;
+  SELECT COUNT(*) FROM consolidated_db.schema.table;
+  ```
+- Run data integrity checks on critical tables
+- Verify all foreign key relationships work correctly
+- Monitor application logs for database-related errors
+- Verify cost reduction by comparing DigitalOcean billing before and after consolidation
+
+# Subtasks:
+## 1. Schema and Usage Documentation [pending]
+### Dependencies: None
+### Description: Catalog and document the schema, structure, and usage patterns of all databases involved in the consolidation. This includes tables, relationships, stored procedures, and data access patterns.
+### Details:
+Gather ER diagrams, data dictionaries, and usage logs. Interview stakeholders to understand business-critical data and workflows.
+
+## 2. Compatibility and Dependency Mapping [pending]
+### Dependencies: None
+### Description: Identify and map all dependencies, integrations, and compatibility issues between the databases and connected applications or services.
+### Details:
+List all application connections, data pipelines, and external dependencies. Note version differences, data type mismatches, and integration points.
+
+## 3. Consolidation Strategy Design [pending]
+### Dependencies: None
+### Description: Design the overall consolidation approach, including target schema, data mapping, transformation rules, and governance framework.
+### Details:
+Define the target database structure, data migration approach (ETL/ELT), and data governance policies. Plan for data standardization and security requirements.
+
+## 4. Migration Script Creation and Testing [pending]
+### Dependencies: None
+### Description: Develop and thoroughly test migration scripts to move and transform data from source databases to the consolidated target.
+### Details:
+Write scripts for data extraction, transformation, and loading. Test with sample data to validate accuracy, performance, and error handling.
+
+## 5. Application Configuration Updates [pending]
+### Dependencies: None
+### Description: Update application and service configurations to point to the new consolidated database and ensure compatibility.
+### Details:
+Modify connection strings, update ORM mappings, and adjust any hardcoded queries or references to the old databases.
+
+## 6. Migration Execution and Verification [pending]
+### Dependencies: None
+### Description: Execute the migration scripts in the production environment and verify data integrity, completeness, and application functionality.
+### Details:
+Perform the migration during a planned window. Run validation checks, compare record counts, and conduct user acceptance testing.
+
+## 7. Post-Migration Monitoring and Rollback Planning [pending]
+### Dependencies: None
+### Description: Monitor the consolidated environment for issues and have a rollback plan in place in case of critical failures.
+### Details:
+Set up monitoring for performance, errors, and data anomalies. Document and test rollback procedures to restore previous state if needed.
+

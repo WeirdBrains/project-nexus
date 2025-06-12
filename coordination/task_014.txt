@@ -1,0 +1,277 @@
+# Task ID: 14
+# Title: Push Notifications & OneSignal Integration
+# Status: pending
+# Dependencies: 2, 12, 7, 8, 11
+# Priority: high
+# Description: Implement and optimize push notification system using OneSignal for user engagement, retention, and re-activation across both SSO and Mandible apps with support for segmentation, personalization, and analytics.
+# Details:
+## Implementation Details
+
+### 1. OneSignal SDK Integration
+- Install OneSignal SDK in both applications:
+  ```bash
+  # For Flutter apps
+  flutter pub add onesignal_flutter
+  
+  # For backend services (Node.js)
+  npm install onesignal-node --save
+  ```
+
+- Initialize OneSignal in app startup:
+  ```dart
+  // In main.dart or app initialization
+  await OneSignal.shared.setAppId("YOUR_ONESIGNAL_APP_ID");
+  await OneSignal.shared.promptUserForPushNotificationPermission();
+  ```
+
+### 2. User Identification & Subscription Management
+- Link OneSignal player IDs with user accounts:
+  ```dart
+  // After user authentication
+  OneSignal.shared.setExternalUserId(userId);
+  ```
+
+- Implement notification preferences UI:
+  - Create settings screen with toggles for different notification categories
+  - Store preferences in user profile database
+  - Sync preferences with OneSignal tags
+
+### 3. Notification Types Implementation
+- Implement transactional notifications:
+  - New messages
+  - System alerts
+  - Account updates
+  
+- Implement engagement notifications:
+  - User inactivity reminders
+  - Feature discovery
+  - Content updates
+
+### 4. Segmentation & Personalization
+- Set up user segments based on:
+  ```dart
+  // Example: Adding user to segments
+  OneSignal.shared.sendTags({
+    "user_type": userType,
+    "subscription_level": subscriptionTier,
+    "last_active": DateTime.now().toString(),
+    "feature_usage": jsonEncode(featureUsageMetrics)
+  });
+  ```
+  
+- Implement personalized notification templates with dynamic content
+
+### 5. A/B Testing Framework
+- Configure A/B testing through OneSignal dashboard
+- Implement tracking for conversion events:
+  ```dart
+  // Track when user interacts with notification content
+  OneSignal.shared.sendOutcome("notification_engagement", 1.0);
+  ```
+
+### 6. Backend Integration
+- Create notification service in backend:
+  ```typescript
+  // Example Node.js service
+  class NotificationService {
+    private client: OneSignal.Client;
+    
+    constructor() {
+      this.client = new OneSignal.Client(APP_ID, API_KEY);
+    }
+    
+    async sendNotification(params: NotificationParams) {
+      const notification = {
+        contents: { en: params.message },
+        headings: { en: params.title },
+        include_external_user_ids: [params.userId],
+        data: params.additionalData,
+        // Add delivery optimization parameters
+        delayed_option: params.scheduledTime ? "timezone" : undefined,
+        delivery_time_of_day: params.optimalDeliveryTime,
+        ttl: 259200 // 3 days
+      };
+      
+      return await this.client.createNotification(notification);
+    }
+  }
+  ```
+
+### 7. Cross-Platform Delivery Optimization
+- Implement platform-specific notification handling
+- Configure rich media notifications for both Android and iOS
+- Set up deep linking configuration:
+  ```dart
+  // Handle notification open events
+  OneSignal.shared.setNotificationOpenedHandler((openResult) {
+    final data = openResult.notification.additionalData;
+    if (data != null && data.containsKey('route')) {
+      navigatorKey.currentState?.pushNamed(data['route'], arguments: data['args']);
+    }
+  });
+  ```
+
+### 8. Analytics Integration
+- Implement notification analytics dashboard
+- Track key metrics:
+  - Delivery rates
+  - Open rates
+  - Conversion rates
+  - Opt-out rates
+- Create automated reporting system
+
+### 9. HIPAA Compliance Integration
+- Ensure notification content follows PHI guidelines
+- Implement secure notification delivery
+- Configure audit logging for notification events
+- Ensure all notification data is encrypted in transit and at rest
+
+### 10. Documentation
+- Create developer documentation for notification system
+- Document user-facing notification preferences
+- Create operational runbook for notification campaigns
+
+# Test Strategy:
+## Testing Strategy
+
+### 1. Unit Testing
+- Test notification service methods:
+  ```dart
+  test('should correctly format notification payload', () {
+    final service = NotificationService();
+    final payload = service.formatPayload(mockNotificationData);
+    expect(payload.contents.en, equals(mockNotificationData.message));
+    expect(payload.include_external_user_ids, contains(mockNotificationData.userId));
+  });
+  ```
+
+- Test notification preference management:
+  ```dart
+  test('should correctly update user notification preferences', () async {
+    await notificationPreferenceManager.updatePreferences(userId, mockPreferences);
+    final storedPreferences = await userRepository.getNotificationPreferences(userId);
+    expect(storedPreferences, equals(mockPreferences));
+  });
+  ```
+
+### 2. Integration Testing
+- Test OneSignal SDK initialization:
+  ```dart
+  testWidgets('OneSignal initializes correctly', (WidgetTester tester) async {
+    await tester.pumpWidget(MyApp());
+    // Verify OneSignal initialization was called
+    verify(mockOneSignal.setAppId(any)).called(1);
+  });
+  ```
+
+- Test notification delivery pipeline:
+  - Create test notification in staging environment
+  - Verify delivery to test devices
+  - Confirm correct handling of notification data
+
+### 3. End-to-End Testing
+- Create test scenarios for different notification types:
+  - Immediate notifications
+  - Scheduled notifications
+  - Segmented notifications
+  - Personalized notifications
+
+- Test notification interaction flows:
+  - App in foreground
+  - App in background
+  - App closed
+  - Different platforms (iOS, Android, Web)
+
+### 4. A/B Testing Verification
+- Verify A/B test configuration is correctly applied
+- Test conversion tracking for different notification variants
+- Validate analytics data collection
+
+### 5. Performance Testing
+- Measure notification delivery times
+- Test system under high notification volume
+- Verify battery and network usage impact
+
+### 6. Security Testing
+- Verify encryption of notification payloads
+- Test notification permission flows
+- Validate HIPAA compliance measures
+- Perform penetration testing on notification delivery system
+
+### 7. User Acceptance Testing
+- Create test group to evaluate notification experience
+- Collect feedback on notification content and frequency
+- Test notification preferences UI
+
+### 8. Monitoring Setup
+- Implement monitoring for:
+  - Notification delivery success rates
+  - API response times
+  - Error rates
+  - User engagement metrics
+
+### 9. Cross-Platform Verification
+- Test on multiple device types and OS versions
+- Verify consistent behavior across platforms
+- Test deep linking functionality from notifications
+
+### 10. Regression Testing
+- Ensure existing app functionality works with notifications
+- Verify no negative impact on app performance
+- Test backward compatibility with older app versions
+
+# Subtasks:
+## 1. Integrate OneSignal SDK Across Platforms [pending]
+### Dependencies: None
+### Description: Set up the OneSignal SDK in all target platforms (iOS, Android, etc.) to enable push notification capabilities.
+### Details:
+Follow official OneSignal documentation for each platform to ensure proper SDK installation and configuration.
+
+## 2. Implement User Identification Mechanism [pending]
+### Dependencies: None
+### Description: Develop a system to uniquely identify users within the app for targeted notifications.
+### Details:
+Map app users to OneSignal player/user IDs and ensure this mapping is securely stored and updated.
+
+## 3. Develop Notification Preference Management [pending]
+### Dependencies: None
+### Description: Allow users to opt in/out and manage their notification preferences within the app.
+### Details:
+Create UI and backend logic for users to select notification types and manage their consent.
+
+## 4. Define and Configure Notification Types [pending]
+### Dependencies: None
+### Description: Establish different categories/types of notifications (e.g., transactional, promotional, reminders).
+### Details:
+Configure these types in OneSignal and ensure the app and backend can handle them distinctly.
+
+## 5. Implement Segmentation and Personalization [pending]
+### Dependencies: None
+### Description: Enable segmentation of users and personalize notifications based on user data and preferences.
+### Details:
+Use OneSignal tags and custom data to segment users and tailor notification content.
+
+## 6. Set Up A/B Testing for Notifications [pending]
+### Dependencies: None
+### Description: Integrate A/B testing capabilities to experiment with different notification content and strategies.
+### Details:
+Leverage OneSignal's built-in A/B testing tools to run experiments and analyze results.
+
+## 7. Integrate Backend Notification Services [pending]
+### Dependencies: None
+### Description: Connect the app backend to OneSignal for programmatic notification sending and management.
+### Details:
+Implement backend endpoints and logic to trigger notifications via OneSignal's API.
+
+## 8. Implement Analytics and Reporting [pending]
+### Dependencies: None
+### Description: Set up analytics to track notification delivery, open rates, and user engagement.
+### Details:
+Utilize OneSignal's analytics dashboard and integrate with internal analytics systems if needed.
+
+## 9. Ensure HIPAA Compliance [pending]
+### Dependencies: None
+### Description: Review and implement all necessary measures to ensure HIPAA compliance for notification data and processes.
+### Details:
+Audit data flows, secure PHI, and document compliance measures in accordance with HIPAA requirements.
+

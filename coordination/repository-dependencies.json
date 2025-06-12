@@ -1,0 +1,85 @@
+{
+  "project": "WeirdBrains",
+  "coordinator": "project-nexus",
+  "last_updated": "2024-06-11",
+  "repositories": {
+    "sso_backend": {
+      "dependencies": [],
+      "dependents": ["accounts", "backend", "mandible"],
+      "deployment_priority": 1,
+      "description": "Authentication service - must deploy first"
+    },
+    "accounts": {
+      "dependencies": ["sso_backend"],
+      "dependents": ["backend", "mandible"],
+      "deployment_priority": 2,
+      "description": "Account management - depends on SSO"
+    },
+    "backend": {
+      "dependencies": ["sso_backend", "accounts"],
+      "dependents": ["mandible"],
+      "deployment_priority": 3,
+      "description": "Main API backend - depends on auth and accounts"
+    },
+    "mandible": {
+      "dependencies": ["backend", "sso_backend", "accounts"],
+      "dependents": [],
+      "deployment_priority": 4,
+      "description": "Flutter frontend - depends on all backend services"
+    },
+    "infrastructure": {
+      "dependencies": ["backend", "sso_backend"],
+      "dependents": [],
+      "deployment_priority": 3,
+      "description": "Infrastructure as code - parallel with backend"
+    },
+    "moire": {
+      "dependencies": ["backend"],
+      "dependents": [],
+      "deployment_priority": 4,
+      "description": "AI/ML components - depends on backend API"
+    },
+    "project-nexus": {
+      "dependencies": [],
+      "dependents": ["all"],
+      "deployment_priority": 0,
+      "description": "Master coordinator - manages all other repositories"
+    }
+  },
+  "deployment_sequences": {
+    "development": [
+      "project-nexus",
+      "sso_backend",
+      "accounts",
+      ["backend", "infrastructure"],
+      ["mandible", "moire"]
+    ],
+    "production": [
+      "project-nexus",
+      "sso_backend",
+      "accounts", 
+      "backend",
+      "infrastructure",
+      "mandible",
+      "moire"
+    ]
+  },
+  "branch_coordination": {
+    "main": "Production-ready code",
+    "feature/task-master-integration": "Current development branch",
+    "develop": "Integration branch for features"
+  },
+  "testing_dependencies": {
+    "unit_tests": {
+      "sso_backend": [],
+      "accounts": ["sso_backend"],
+      "backend": ["sso_backend", "accounts"],
+      "mandible": ["backend", "sso_backend"]
+    },
+    "integration_tests": {
+      "auth_flow": ["sso_backend", "accounts", "mandible"],
+      "api_integration": ["backend", "sso_backend", "accounts"],
+      "end_to_end": ["mandible", "backend", "sso_backend", "accounts"]
+    }
+  }
+}

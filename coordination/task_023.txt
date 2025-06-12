@@ -1,0 +1,504 @@
+# Task ID: 23
+# Title: Implement Unread Message Indicators & Count System
+# Status: done
+# Dependencies: 1, 2
+# Priority: high
+# Description: Add unread message count button to the Messages tab and unread notification indicators on chat tiles, including database schema changes for message read tracking, backend APIs, frontend state management, and UI components with real-time polling integration.
+# Details:
+## Implementation Steps
+
+### 1. Database Schema Changes
+- Modify the messages table to track read status:
+```sql
+ALTER TABLE messages ADD COLUMN is_read BOOLEAN DEFAULT FALSE;
+ALTER TABLE messages ADD COLUMN read_at TIMESTAMP NULL;
+```
+- Create a new table to track unread counts per conversation:
+```sql
+CREATE TABLE conversation_unread_counts (
+  conversation_id INTEGER PRIMARY KEY REFERENCES conversations(id),
+  user_id INTEGER REFERENCES users(id),
+  unread_count INTEGER DEFAULT 0,
+  last_read_message_id INTEGER REFERENCES messages(id),
+  UNIQUE(conversation_id, user_id)
+);
+```
+
+### 2. Backend API Development
+- Create new endpoints:
+  - `GET /api/conversations/{id}/unread-count` - Returns unread count for a specific conversation
+  - `GET /api/users/me/unread-messages-count` - Returns total unread messages across all conversations
+  - `PUT /api/messages/{id}/mark-read` - Mark a specific message as read
+  - `PUT /api/conversations/{id}/mark-read` - Mark all messages in a conversation as read
+
+- Update the MessageService class:
+```java
+public class MessageService {
+  // Existing methods...
+  
+  public int getUnreadCountForConversation(Long conversationId, Long userId) {
+    return conversationUnreadCountRepository.findByConversationIdAndUserId(conversationId, userId)
+      .map(ConversationUnreadCount::getUnreadCount)
+      .orElse(0);
+  }
+  
+  public int getTotalUnreadCount(Long userId) {
+    return conversationUnreadCountRepository.sumUnreadCountByUserId(userId);
+  }
+  
+  public void markMessageAsRead(Long messageId, Long userId) {
+    Message message = messageRepository.findById(messageId)
+      .orElseThrow(() -> new ResourceNotFoundException("Message not found"));
+      
+    if (!message.isRead() && !message.getSenderId().equals(userId)) {
+      message.setIsRead(true);
+      message.setReadAt(LocalDateTime.now());
+      messageRepository.save(message);
+      
+      // Update unread count
+      updateUnreadCountForConversation(message.getConversationId(), userId);
+    }
+  }
+  
+  public void markConversationAsRead(Long conversationId, Long userId) {
+    List<Message> unreadMessages = messageRepository.findByConversationIdAndIsReadAndSenderIdNot(
+      conversationId, false, userId);
+      
+    unreadMessages.forEach(message -> {
+      message.setIsRead(true);
+      message.setReadAt(LocalDateTime.now());
+    });
+    
+    messageRepository.saveAll(unreadMessages);
+    
+    // Reset unread count
+    ConversationUnreadCount unreadCount = conversationUnreadCountRepository
+      .findByConversationIdAndUserId(conversationId, userId)
+      .orElse(new ConversationUnreadCount(conversationId, userId));
+    
+    unreadCount.setUnreadCount(0);
+    if (!unreadMessages.isEmpty()) {
+      unreadCount.setLastReadMessageId(
+        unreadMessages.stream()
+          .max(Comparator.comparing(Message::getCreatedAt))
+          .map(Message::getId)
+          .orElse(null)
+      );
+    }
+    
+    conversationUnreadCountRepository.save(unreadCount);
+  }
+  
+  private void updateUnreadCountForConversation(Long conversationId, Long userId) {
+    int count = messageRepository.countByConversationIdAndIsReadAndSenderIdNot(
+      conversationId, false, userId);
+      
+    ConversationUnreadCount unreadCount = conversationUnreadCountRepository
+      .findByConversationIdAndUserId(conversationId, userId)
+      .orElse(new ConversationUnreadCount(conversationId, userId));
+      
+    unreadCount.setUnreadCount(count);
+    conversationUnreadCountRepository.save(unreadCount);
+  }
+}
+```
+
+### 3. Frontend State Management
+- Create a new Redux slice for unread messages:
+```javascript
+// src/store/slices/unreadMessagesSlice.js
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { messageApi } from '../../api/messageApi';
+
+export const fetchUnreadCounts = createAsyncThunk(
+  'unreadMessages/fetchUnreadCounts',
+  async () => {
+    const response = await messageApi.getTotalUnreadCount();
+    return response.data;
+  }
+);
+
+export const fetchConversationUnreadCount = createAsyncThunk(
+  'unreadMessages/fetchConversationUnreadCount',
+  async (conversationId) => {
+    const response = await messageApi.getConversationUnreadCount(conversationId);
+    return { conversationId, count: response.data.count };
+  }
+);
+
+export const markConversationAsRead = createAsyncThunk(
+  'unreadMessages/markConversationAsRead',
+  async (conversationId) => {
+    await messageApi.markConversationAsRead(conversationId);
+    return conversationId;
+  }
+);
+
+const unreadMessagesSlice = createSlice({
+  name: 'unreadMessages',
+  initialState: {
+    totalUnread: 0,
+    conversationCounts: {},
+    loading: false,
+    error: null,
+  },
+  reducers: {
+    incrementUnreadCount(state, action) {
+      const { conversationId } = action.payload;
+      state.totalUnread += 1;
+      state.conversationCounts[conversationId] = (state.conversationCounts[conversationId] || 0) + 1;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchUnreadCounts.fulfilled, (state, action) => {
+        state.totalUnread = action.payload.count;
+        state.loading = false;
+      })
+      .addCase(fetchConversationUnreadCount.fulfilled, (state, action) => {
+        const { conversationId, count } = action.payload;
+        state.conversationCounts[conversationId] = count;
+      })
+      .addCase(markConversationAsRead.fulfilled, (state, action) => {
+        const conversationId = action.payload;
+        const previousCount = state.conversationCounts[conversationId] || 0;
+        state.totalUnread = Math.max(0, state.totalUnread - previousCount);
+        state.conversationCounts[conversationId] = 0;
+      });
+  },
+});
+
+export const { incrementUnreadCount } = unreadMessagesSlice.actions;
+export default unreadMessagesSlice.reducer;
+```
+
+### 4. UI Components
+- Create an UnreadBadge component:
+```jsx
+// src/components/UnreadBadge.jsx
+import React from 'react';
+import styled from 'styled-components';
+
+const Badge = styled.div`
+  background-color: #ff3b30;
+  color: white;
+  border-radius: 50%;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  position: absolute;
+  top: ${props => props.top || '-5px'};
+  right: ${props => props.right || '-5px'};
+  
+  ${props => props.count > 99 && `
+    &:after {
+      content: '99+';
+    }
+  `}
+`;
+
+const UnreadBadge = ({ count, top, right }) => {
+  if (!count || count <= 0) return null;
+  
+  return (
+    <Badge count={count} top={top} right={right}>
+      {count <= 99 ? count : '99+'}
+    </Badge>
+  );
+};
+
+export default UnreadBadge;
+```
+
+- Update the MessagesTab component:
+```jsx
+// src/components/MessagesTab.jsx
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUnreadCounts } from '../store/slices/unreadMessagesSlice';
+import UnreadBadge from './UnreadBadge';
+
+const MessagesTab = () => {
+  const dispatch = useDispatch();
+  const { totalUnread } = useSelector(state => state.unreadMessages);
+  
+  return (
+    <div className="messages-tab">
+      <span>Messages</span>
+      <UnreadBadge count={totalUnread} />
+    </div>
+  );
+};
+
+export default MessagesTab;
+```
+
+- Update the ConversationListItem component:
+```jsx
+// src/components/ConversationListItem.jsx
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchConversationUnreadCount } from '../store/slices/unreadMessagesSlice';
+import UnreadBadge from './UnreadBadge';
+
+const ConversationListItem = ({ conversation }) => {
+  const dispatch = useDispatch();
+  const unreadCount = useSelector(state => 
+    state.unreadMessages.conversationCounts[conversation.id] || 0
+  );
+  
+  useEffect(() => {
+    dispatch(fetchConversationUnreadCount(conversation.id));
+  }, [dispatch, conversation.id]);
+  
+  return (
+    <div className="conversation-list-item">
+      <div className="avatar">
+        <img src={conversation.avatar} alt={conversation.name} />
+        {conversation.isOnline && <div className="online-indicator" />}
+      </div>
+      <div className="conversation-info">
+        <div className="conversation-name">{conversation.name}</div>
+        <div className="last-message">{conversation.lastMessage}</div>
+      </div>
+      <div className="conversation-metadata">
+        <div className="timestamp">{conversation.lastMessageTime}</div>
+        <UnreadBadge count={unreadCount} />
+      </div>
+    </div>
+  );
+};
+
+export default ConversationListItem;
+```
+
+### 5. Real-time Polling Integration
+- Integrate with the Smart Polling Infrastructure:
+```javascript
+// src/services/unreadMessagePollingService.js
+import { store } from '../store';
+import { fetchUnreadCounts, fetchConversationUnreadCount, incrementUnreadCount } from '../store/slices/unreadMessagesSlice';
+import { PollingManager } from './pollingManager';
+
+export const registerUnreadMessagePolling = () => {
+  // Register global unread count polling
+  PollingManager.register({
+    context: 'notifications',
+    callback: () => {
+      store.dispatch(fetchUnreadCounts());
+    },
+    initialInterval: 30000, // 30 seconds
+    minInterval: 15000,     // 15 seconds
+    maxInterval: 120000     // 2 minutes
+  });
+  
+  // Handle new message events
+  PollingManager.onMessageReceived((message) => {
+    const currentUserId = store.getState().auth.user.id;
+    
+    // Only increment unread count for messages not sent by current user
+    if (message.senderId !== currentUserId) {
+      store.dispatch(incrementUnreadCount({ conversationId: message.conversationId }));
+      
+      // If user is not in the conversation view, update the conversation unread count
+      const activeConversation = store.getState().conversations.activeConversation;
+      if (activeConversation !== message.conversationId) {
+        store.dispatch(fetchConversationUnreadCount(message.conversationId));
+      }
+    }
+  });
+};
+
+// Register conversation-specific polling when viewing a conversation
+export const registerConversationUnreadPolling = (conversationId) => {
+  return PollingManager.register({
+    context: 'activeChat',
+    callback: () => {
+      store.dispatch(fetchConversationUnreadCount(conversationId));
+    },
+    initialInterval: 10000, // 10 seconds
+    minInterval: 5000,      // 5 seconds
+    maxInterval: 30000      // 30 seconds
+  });
+};
+```
+
+### 6. Message Read Tracking
+- Update the ChatView component to mark messages as read:
+```jsx
+// src/components/ChatView.jsx
+import React, { useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { markConversationAsRead } from '../store/slices/unreadMessagesSlice';
+
+const ChatView = ({ conversationId }) => {
+  const dispatch = useDispatch();
+  
+  useEffect(() => {
+    // Mark conversation as read when viewing it
+    if (conversationId) {
+      dispatch(markConversationAsRead(conversationId));
+    }
+    
+    // Set up polling for this conversation
+    const pollingId = registerConversationUnreadPolling(conversationId);
+    
+    return () => {
+      // Clean up polling when leaving the conversation
+      PollingManager.unregister(pollingId);
+    };
+  }, [dispatch, conversationId]);
+  
+  // Rest of component...
+};
+
+export default ChatView;
+```
+
+### 7. App Initialization
+- Register unread message polling on app startup:
+```javascript
+// src/App.js
+import { registerUnreadMessagePolling } from './services/unreadMessagePollingService';
+
+function App() {
+  useEffect(() => {
+    // Initialize unread message polling
+    registerUnreadMessagePolling();
+  }, []);
+  
+  // Rest of component...
+}
+```
+
+# Test Strategy:
+## Testing Strategy
+
+### 1. Database Schema Testing
+- Verify the database schema changes:
+  - Confirm the `is_read` and `read_at` columns are added to the messages table
+  - Validate the creation of the `conversation_unread_counts` table
+  - Test foreign key constraints and default values
+
+### 2. Backend API Testing
+- Unit tests for MessageService:
+  - Test `getUnreadCountForConversation` returns correct count
+  - Test `getTotalUnreadCount` sums all unread messages correctly
+  - Test `markMessageAsRead` updates message status and unread count
+  - Test `markConversationAsRead` marks all messages as read and resets count
+
+- API endpoint tests:
+  - Test `GET /api/conversations/{id}/unread-count` returns correct count
+  - Test `GET /api/users/me/unread-messages-count` returns total unread messages
+  - Test `PUT /api/messages/{id}/mark-read` marks a message as read
+  - Test `PUT /api/conversations/{id}/mark-read` marks all messages in a conversation as read
+
+- Integration tests:
+  - Test unread count updates when a new message is received
+  - Test unread count decreases when messages are read
+  - Test edge cases (e.g., marking already read messages, non-existent messages)
+
+### 3. Frontend State Management Testing
+- Unit tests for Redux slice:
+  - Test initial state is correctly set
+  - Test `incrementUnreadCount` action correctly updates state
+  - Test async thunks (`fetchUnreadCounts`, `fetchConversationUnreadCount`, `markConversationAsRead`)
+  - Test reducers handle all action types correctly
+
+### 4. UI Component Testing
+- Component tests:
+  - Test UnreadBadge renders correctly with different counts
+  - Test UnreadBadge doesn't render when count is 0
+  - Test MessagesTab displays the total unread count
+  - Test ConversationListItem displays the conversation-specific unread count
+
+- Visual regression tests:
+  - Verify badge styling and positioning
+  - Test badge appearance with different count values (1, 2, 99, 100+)
+
+### 5. Real-time Polling Integration Testing
+- Test polling registration:
+  - Verify polling is registered with correct contexts
+  - Test polling intervals adapt based on user activity
+
+- Test message event handling:
+  - Verify unread count increments when a new message is received
+  - Test that messages sent by the current user don't increment unread count
+
+### 6. End-to-End Testing
+- Test complete user flows:
+  - Verify unread indicators appear when a new message arrives
+  - Test that opening a conversation marks messages as read
+  - Verify unread count updates in real-time across the app
+  - Test that indicators disappear when messages are read
+
+- Cross-device testing:
+  - Test synchronization of read status across multiple devices
+  - Verify unread counts are consistent when logging in from different devices
+
+### 7. Performance Testing
+- Test database query performance:
+  - Measure query execution time for unread count calculations
+  - Test with large datasets (thousands of messages and conversations)
+
+- Test polling efficiency:
+  - Monitor network usage during different user activities
+  - Verify polling frequency adjusts based on app state
+
+### 8. Manual Testing Checklist
+- [ ] Verify unread badge appears on Messages tab when there are unread messages
+- [ ] Confirm unread indicators appear on conversation tiles
+- [ ] Check that opening a conversation marks messages as read
+- [ ] Test that unread counts update in real-time when receiving new messages
+- [ ] Verify counts are accurate after app restart
+- [ ] Test behavior when rapidly switching between conversations
+- [ ] Verify performance on low-end devices
+
+# Subtasks:
+## 1. Database Schema Changes for Message Read Tracking [done]
+### Dependencies: None
+### Description: Add read tracking columns to messages table and create unread count tracking infrastructure in the database
+### Details:
+Add read_by JSONB column and read_at timestamp to messages table. Create indexes for efficient unread count queries. Consider message_read_status table for detailed tracking if needed.
+
+## 2. Backend API Development for Unread Counts [done]
+### Dependencies: 23.1
+### Description: Create backend endpoints for unread message counts and mark-as-read functionality
+### Details:
+Implement /api/messages/unread-count/{userId} and /api/messages/unread-count/{userId}/{chatId} endpoints. Add mark-as-read endpoints for individual messages and entire chats.
+
+## 3. Frontend State Management and Providers [done]
+### Dependencies: 23.2
+### Description: Create Riverpod providers for unread message state management and real-time updates
+### Details:
+Implement unread message count providers, state management for per-chat unread counts, and integration with existing polling system for real-time updates.
+
+## 4. Chat Tile Unread Indicator Implementation [done]
+### Dependencies: 23.3
+### Description: Add unread count badges and visual indicators to chat tiles in the chat list
+### Details:
+Modify ChatTile component to display unread count badges, style unread chats differently (bold text, different background), and position indicators consistently with existing notification patterns.
+
+## 5. Messages Tab Unread Count Badge [done]
+### Dependencies: 23.3
+### Description: Add unread message count badge to the Messages tab in bottom navigation
+### Details:
+Implement unread count badge on the Messages tab similar to the existing notification button pattern. Update mobile and desktop navigation to show total unread message count.
+
+## 6. Real-time Polling Integration [done]
+### Dependencies: 23.4, 23.5
+### Description: Integrate unread message tracking with existing smart polling system for real-time updates
+### Details:
+Connect unread message providers with smart polling infrastructure. Implement automatic unread count updates when messages are received, and mark-as-read functionality when entering chats.
+
+## 7. Testing and Performance Optimization [done]
+### Dependencies: 23.6
+### Description: Comprehensive testing of unread message system and performance optimization
+### Details:
+Test all unread message functionality, optimize database queries with proper indexing, implement efficient caching for unread counts, and validate real-time updates work correctly across different scenarios.
+

@@ -1,0 +1,108 @@
+# Task ID: 5
+# Title: Fix Chat Deletion UX
+# Status: in-progress
+# Dependencies: None
+# Priority: high
+# Description: Replace the current hard delete implementation with a soft delete pattern that preserves message history and only hides chats for the current user, not all participants.
+# Details:
+## Phase 1: Immediate Error Fix (COMPLETED)
+1. ✅ Fixed Chat Provider Error Handling: Updated chat_providers.dart to return AsyncError instead of throwing exception when chat not found
+2. ✅ Added Chat Not Available UI: Created comprehensive ChatNotAvailableView component with variants (ChatDeletedView, ChatHiddenView, GroupLeftView)
+3. ✅ Updated Messages View: Now gracefully handles missing chats with ChatNotAvailableView instead of ErrorScreen
+4. ✅ Updated Chat Details Page: Proper fallback UI when chat not found
+5. ✅ Updated Edit Chat Page: Clean error handling for unavailable chats
+6. ✅ Navigation Safety: All chat-related views now handle missing chats without crashes
+
+## Phase 2: Database Schema Changes
+1. Modify the chat_rooms table to support soft delete:
+```sql
+ALTER TABLE chat_rooms ADD COLUMN deleted_at TIMESTAMP NULL;
+ALTER TABLE chat_rooms ADD COLUMN deleted_by VARCHAR(255) NULL;
+```
+
+2. Create a new user_chat_visibility table for per-user hiding:
+```sql
+CREATE TABLE user_chat_visibility (
+  id VARCHAR(255) PRIMARY KEY,
+  user_id VARCHAR(255) NOT NULL,
+  chat_id VARCHAR(255) NOT NULL,
+  hidden_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## Phase 3: API and Frontend Implementation
+1. Create a new API endpoint for hiding chats:
+```
+PUT /chat/chat_rooms/{id}/hide
+```
+
+2. Update the frontend ChatController to use hide instead of delete:
+```dart
+Future<bool> hideChat(String chatId) async {
+  try {
+    final response = await _chatRepository.hideChat(chatId);
+    if (response.success) {
+      // Remove from local list but preserve data
+      _removeFromLocalList(chatId);
+      return true;
+    }
+    return false;
+  } catch (e) {
+    _logger.error('Failed to hide chat', e);
+    return false;
+  }
+}
+```
+
+3. Implement different behaviors for one-to-one vs group chats:
+   - One-to-one: Hide for current user only
+   - Group chats: Option to leave group or hide conversation
+
+4. Update chat list queries to filter based on visibility settings
+
+## URGENT: HPU Demo Requirements
+- Complete Phases 2-3 by Saturday for Tuesday's HPU demo
+- Ensure zero chat deletion crashes during the demo
+- Focus on implementing the user_chat_visibility table and hide API endpoint
+- Test thoroughly with all chat scenarios (one-to-one, group chats)
+
+# Test Strategy:
+1. Verify database schema changes correctly implement soft delete
+2. Test hiding a chat for one user and verify it remains visible for others
+3. Test different scenarios: one-to-one chat hiding vs group chat hiding
+4. Verify that hidden chats can be restored if needed
+5. Test error handling when accessing a hidden chat
+   - Verify the ChatNotAvailableView components display correctly in all scenarios
+   - Confirm that the appropriate variant (ChatDeletedView, ChatHiddenView, GroupLeftView) is shown
+6. Verify that message history is preserved when a chat is hidden
+7. Performance test to ensure chat list queries remain efficient with visibility filtering
+8. Regression test to ensure Phase 1 error handling continues to work with new implementation
+9. Pre-demo validation: Run through all chat deletion/hiding scenarios that might occur during the HPU demo
+10. Create a demo script with specific test cases to verify during final pre-demo check
+
+# Subtasks:
+## 1. Database Schema Changes for Message Deletion [pending]
+### Dependencies: None
+### Description: Design and implement schema changes to support both soft and hard delete strategies for chat messages, ensuring compliance with healthcare retention and audit requirements.
+### Details:
+Add a 'deleted_at' timestamp and 'deleted_by' user reference to the messages table for soft deletes. Ensure audit trail fields are preserved and consider a separate archival table for hard deletes. Implement message retention policy fields as needed.
+
+## 2. API and Backend Logic for Deletion and Retention [pending]
+### Dependencies: None
+### Description: Update backend logic and API endpoints to handle message deletion requests, enforce retention policies, and maintain audit trails in line with industry best practices.
+### Details:
+Implement endpoints for soft delete (mark as deleted, retain for audit/search), hard delete (permanent removal after retention period), and restoration if allowed. Ensure all deletion actions are logged for compliance. Integrate policy checks for healthcare-specific retention and deletion rules.
+
+## 3. Frontend UX Updates for Deletion Flows [pending]
+### Dependencies: None
+### Description: Redesign chat UI to provide user-friendly, confirmation-driven deletion flows modeled after WhatsApp, Slack, Teams, and Discord, with clear feedback and undo options where appropriate.
+### Details:
+Add contextual delete actions (e.g., long-press, right-click), confirmation dialogs, and visual indicators for deleted messages (e.g., 'This message was deleted'). Ensure flows align with healthcare privacy and user experience best practices. Provide clear messaging about retention and audit policies.
+
+## 4. Comprehensive Testing and Demo Validation [pending]
+### Dependencies: None
+### Description: Develop and execute test plans covering all deletion scenarios, retention policy enforcement, audit trail integrity, and user experience validation, including demo walkthroughs.
+### Details:
+Write unit, integration, and end-to-end tests for soft/hard delete, retention expiry, and audit logging. Validate frontend flows for confirmation, undo, and deleted message display. Conduct demo sessions to ensure all requirements and UX patterns are met.
+
