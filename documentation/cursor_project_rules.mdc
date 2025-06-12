@@ -1,0 +1,122 @@
+---
+description: Apply these rules when creating the project
+globs:
+alwaysApply: true
+---
+## Project Overview
+
+*   **Type:** AI-powered project management system
+*   **Description:** AI-powered project management system for multi-repository coordination.
+*   **Primary Goal:** Centralize task management, enable AI agent coordination, and automate workflows.
+
+## Project Structure
+
+### Framework-Specific Routing
+
+*   **Directory Rules:**
+    *   [Node.js + Express]: `src/routes/[route].js` (or `.mjs`) with `express.Router()` exports
+    *   [Dart Frog]: `routes/[route].dart` handlers per HTTP method
+    *   [Flutter]: `lib/screens/[screen].dart` and `lib/widgets/[widget].dart`
+    *   Example 1: "Express 4.x" → `src/routes/tasks.js` exports routes for `/tasks`
+    *   Example 2: "Dart Frog 1.x" → `routes/auth.dart` defines authentication endpoints
+    *   Example 3: "Flutter 3.10" → `lib/screens/dashboard.dart` as main dashboard UI
+
+### Core Directories
+
+*   **Versioned Structure:**
+    *   `backend/`: "Node.js 18+ automation services"
+    *   `mandible/`: "Flutter 3.10 null-safe mobile client"
+    *   `sso_backend/`: "Dart Frog 1.x SSO API"
+    *   `accounts/`: "Node.js 18+ account management microservice"
+
+### Key Files
+
+*   **Stack-Versioned Patterns:**
+    *   `backend/src/index.mjs`: "Node.js 18+ ES module entrypoint"
+    *   `backend/src/routes/tasks.js`: "Express route handlers for task endpoints"
+    *   `sso_backend/routes/auth.dart`: "Dart Frog SSO route handler"
+    *   `mandible/lib/main.dart`: "Flutter 3.10 app entrypoint with null safety"
+    *   `accounts/src/routes/users.mjs`: "Express route for user account management"
+
+## Tech Stack Rules
+
+*   **Version Enforcement:**
+    *   node@18: Use ES Modules (`"type": "module"`), async/await, no `require()`
+    *   dart@3.0+: Null safety enabled, strong mode
+    *   flutter@3.10: Follow Flutter 3 API conventions, avoid deprecated APIs
+    *   dart_frog@1.2: Place HTTP handlers in `routes/` folder, use typed request/response
+
+## PRD Compliance
+
+*   "Centralize task management, enable AI agent coordination, and automate workflows.": Must implement JSON-based task database with IDs, complexity scores, dependency tracking, and status updates.
+*   "Assign tasks to specific repositories (mandible, backend, sso_backend, accounts).": Directory mapping per repo is mandatory.
+*   "Automated Reporting: Agent progress tracking and status updates from GitHub.": Implement GitHub webhook listeners and Slack notification adapters.
+
+## App Flow Integration
+
+*   AI Agent Workflow → `backend/src/agents/` uses Factory.ai SDK for task assignments
+*   Task Discovery → `scripts/discover_tasks.mjs` reads `tasks/*.json`
+*   Task Analysis → `scripts/analyze_task.mjs` validates complexity/dependencies
+*   Repository Setup → `scripts/setup_repo.mjs` clones target repo based on mapping
+*   Implementation → incremental commits in each service’s `src/` or `lib/`
+*   Pull Request → `scripts/create_pr.mjs` uses GitHub API to open PR with "Task #XX"
+*   Status Update → `webhooks/github.js` updates task status in PostgreSQL and notifies Slack
+
+## Best Practices
+
+*   Node.js/Express
+    *   Use ES Modules, async/await, and centralized error middleware
+    *   Validate request payloads with Zod or Joi
+    *   Log using a structured logger (e.g., pino or Winston)
+*   Dart/Flutter
+    *   Leverage null safety and `Provider` or `Riverpod` for state management
+    *   Split UI and business logic with MVVM or BLoC patterns
+    *   Write unit tests and widget tests for critical paths
+*   Dart Frog
+    *   Organize handlers in `routes/`, separate controllers/services
+    *   Apply middleware for logging, authentication, and CORS
+    *   Use `dotenv` for environment configuration
+*   PostgreSQL
+    *   Manage schema via migrations (e.g., Knex, Prisma)
+    *   Use parameterized queries to prevent SQL injection
+    *   Index frequently queried fields (`status`, `repository`)
+*   JSON Task Definitions
+    *   Validate against JSON Schema before ingestion
+    *   Version task definition schemas to support evolution
+*   Markdown Documentation
+    *   Include frontmatter metadata (`title`, `repo`, `lastUpdated`)
+    *   Generate docs from code comments using tools (e.g., Docusaurus)
+    *   Automate link verification in CI
+*   GitHub Integrations
+    *   Define CI/CD workflows in `.github/workflows/`
+    *   Enforce branch protection on `main` and `development`
+    *   Use semantic version tags and changelogs
+*   Slack Integration
+    *   Build Slack App with minimal scopes (chat:write, channels:read)
+    *   Retry failed webhook calls with exponential backoff
+    *   Log notifications and errors in a dedicated Slack channel
+
+## Rules
+
+*   Derive folder/file patterns directly from tech stack versions.
+*   For Node.js 18+ Express: enforce `src/routes/` with `.js`/`.mjs` modules and no mixing with other frameworks.
+*   For Dart Frog: use `routes/[route].dart`; do not introduce Express or other routing patterns.
+*   For Flutter: organize screens in `lib/screens/` and widgets in `lib/widgets/`; no mixing with web frameworks.
+*   Never mix routing conventions across services (e.g., no `routes/` in Flutter, no `screens/` in Node.js).
+
+## Rules Metrics
+
+Before starting the project development, create a metrics file in the root of the project called `cursor_metrics.md`.
+
+### Instructions:
+*   Each time a cursor rule is used as context, update `cursor_metrics.md`.
+*   Use the following format for `cursor_metrics.md`:
+
+# Rules Metrics
+
+## Usage
+The number of times rules is used as context
+
+*   folder-pattern.mdc: 5
+*   routing-pattern.mdc: 2
+*   naming-convention.mdc: 3

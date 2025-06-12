@@ -1,0 +1,95 @@
+# WeirdBrains Space Enhancement - Master Coordination PRD
+
+## Project Overview
+
+The WeirdBrains Space Enhancement project implements comprehensive role-based access control for the space functionality across the entire WeirdBrains ecosystem. This is a cross-repository coordination effort that requires synchronized development across backend, SSO backend, frontend, and accounts repositories.
+
+## Core Requirements
+
+### 1. Permission System Enhancement
+- Implement role-based access control where only Mandible Admins can create new spaces
+- Define clear roles and permissions for space admins vs regular space members
+- Establish permission hierarchy: Mandible Admin > Space Owner > Space Admin > Space Member > Space Viewer
+
+### 2. Cross-Repository Coordination
+- Coordinate database schema updates across backend and SSO backend
+- Synchronize API changes between backend services
+- Align frontend implementations across mandible and accounts apps
+- Ensure consistent role enforcement across all services
+
+### 3. Technical Implementation
+- Database schema migrations for space_members and space_permissions tables
+- Backend API enhancements with permission middleware
+- SSO backend integration for Mandible Admin role management
+- Frontend UI components for member management and admin assignment
+- HIPAA compliance validation and security testing
+
+## Repository Assignments
+
+### @WeirdBrains/backend/
+- Database schema migrations (space_members, space_permissions tables)
+- Space permission middleware implementation
+- Member management API endpoints (invite, remove, update roles)
+- Space admin assignment endpoints
+- Permission caching system
+
+### @WeirdBrains/sso_backend/
+- Mandible Admin role management (add mandible_admin field)
+- User permission context enhancement
+- Cross-application role validation
+- Admin status API endpoints
+- Enhanced authentication middleware
+
+### @WeirdBrains/mandible/
+- Space model updates with role fields
+- Member management UI components
+- Permission-based UI rendering
+- Space creation restrictions for non-admins
+- Admin assignment interfaces
+
+### @WeirdBrains/accounts/
+- Mandible Admin management interface
+- User role assignment features
+- Space oversight dashboard for admins
+- Admin user creation workflow
+
+## Success Criteria
+
+1. Only Mandible Admins can create new spaces
+2. Space admins can invite/remove members and manage space settings
+3. Proper permission inheritance and role-based access control
+4. Seamless user experience across all applications
+5. HIPAA compliance maintained throughout
+6. Performance impact minimized with permission caching
+7. Comprehensive audit logging for all permission changes
+
+## Technical Constraints
+
+- Must maintain backward compatibility with existing spaces
+- HIPAA compliance required for all new features
+- Performance impact must be minimal (< 100ms for permission checks)
+- Database migrations must be reversible
+- All changes must be thoroughly tested across repositories
+
+## Coordination Requirements
+
+- Daily standups for cross-repository synchronization
+- Shared development environment for integration testing
+- Coordinated deployment across all services
+- Documentation updates maintained in real-time
+- Task Master progress tracking with cross-repository dependencies
+
+## Timeline
+
+- Week 1: Database schema and backend foundation
+- Week 2: Member management and permissions
+- Week 3: Frontend integration and UI components
+- Week 4: Admin features, testing, and deployment
+
+## Risk Mitigation
+
+- Database backup procedures before schema changes
+- Rollback plans for each repository
+- Staged deployment with feature flags
+- Comprehensive testing at each integration point
+- Security review for all new endpoints and UI components

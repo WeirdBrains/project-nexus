@@ -1,0 +1,257 @@
+# WeirdBrains Unread Messages Counter - Product Requirements Document
+
+## Executive Summary
+
+The unread messages counter feature is **partially implemented but non-functional** due to **missing backend API endpoints**. This system needs to integrate with the existing notification polling infrastructure to provide **two distinct UI indicators**: (1) a total unread count badge on the Messages tab, and (2) individual unread indicators on chat tiles. The frontend has a complete state management system using Riverpod with smart polling architecture, but the critical backend routes are missing.
+
+## Current Implementation Status
+
+### Frontend (Flutter/Riverpod) - ✅ Well Implemented
+- **State Management**: `UnreadMessagesController` using Riverpod's `NotifierProvider`
+- **Repository Pattern**: Clean interface with `UnreadMessagesRepository`
+- **Smart Polling**: Coordinated with existing notification system
+- **UI Integration**: Badge components ready for Messages tab and chat tiles
+
+### Database Schema - ✅ Properly Designed
+- **`messages`** table with `read_by` JSONB field and proper indexing
+- **`message_reads`** table for individual read receipts
+- **`message_unread_counts`** table for cached counts with `last_updated` timestamps
+- **8 total messages** in system, **7 unread**, proper data structure exists
+
+### Backend API - ❌ CRITICAL MISSING COMPONENTS
+**Missing Routes:**
+1. `GET /chat/messages/unread_count/{user_id}` - Total unread count
+2. `GET /chat/messages/unread_count/{user_id}/{chat_id}` - Per-chat unread count
+3. `PUT /chat/messages/mark_read/{user_id}/{chat_id}` - Mark messages as read
+4. `POST /chat/messages/refresh/unread_counts_{user_id}` - Refresh/recalculate counts
+
+## UI Requirements
+
+### Three Distinct Indicator Systems
+1. **Notification Button** (Top-right) - System notifications (✅ Working)
+2. **Messages Tab Badge** (Bottom nav) - Total unread messages (❌ Blocked)
+3. **Chat Tile Indicators** (Chat list) - Per-chat unread status (❌ Blocked)
+
+### Visual Specifications
+- **Messages Tab Badge**: Shows count (e.g., "5"), max display "99+"
+- **Chat Tile Indicators**: Small badge or dot, shows count or simple presence indicator
+- **Color Scheme**: Primary theme color for message badges, red for notifications
+
+## Smart Polling Integration
+
+### Current Working System (Notifications)
+```
+Notifications Polling Flow:
+1. NotificationButton → ref.watch(unreadNotificationsCountProvider)
+2. Provider calls notificationRepository.getUnreadCount()
+3. Repository hits GET /notifications/actions/unread_count?userId={id}
+4. Backend queries notifications table
+5. UI updates notification badge
+```
+
+### Intended System (Messages - Currently Broken)
+```
+Messages Polling Flow:
+1. Messages Tab → ref.watch(totalUnreadCountProvider)
+2. Chat Tiles → ref.watch(chatUnreadCountProvider(chatId))
+3. Controller calls repository methods
+4. ❌ Repository hits missing endpoints
+5. ❌ Backend should query message_unread_counts table
+6. ❌ UI should update message badges
+```
+
+### Polling Coordination Strategy
+- **Notifications**: Every 30 seconds at :00, :30
+- **Messages**: Every 30 seconds at :15, :45 (offset by 15s to distribute load)
+- **Error Backoff**: Independent exponential backoff for each system
+- **Activity-Based**: Faster polling during active chat sessions
+
+## Data Flow Requirements
+
+### Database Queries Needed
+```sql
+-- Total unread count (Missing API)
+SELECT SUM(unread_count) as total_unread_messages
+FROM message_unread_counts 
+WHERE user_id = @userId;
+
+-- Per-chat unread count (Missing API)
+SELECT unread_count as chat_unread_messages
+FROM message_unread_counts 
+WHERE user_id = @userId AND chat_id = @chatId;
+
+-- Mark messages as read (Missing API)
+UPDATE message_unread_counts 
+SET unread_count = 0, last_updated = NOW()
+WHERE user_id = @userId AND chat_id = @chatId;
+```
+
+### State Management Flow
+```dart
+// Total count provider (Ready, needs backend)
+@riverpod
+int totalUnreadCount(TotalUnreadCountRef ref) {
+  final unreadState = ref.watch(unreadMessagesControllerProvider);
+  return unreadState.totalUnread;
+}
+
+// Per-chat count provider (Ready, needs backend)
+@riverpod
+int chatUnreadCount(ChatUnreadCountRef ref, String chatId) {
+  final unreadState = ref.watch(unreadMessagesControllerProvider);
+  return unreadState.getChatUnreadCount(chatId);
+}
+```
+
+## Technical Implementation Requirements
+
+### Backend Route Specifications
+
+**1. GET /chat/messages/unread_count/[user_id].dart**
+```dart
+Future<Response> _getTotalUnreadCount(RequestContext context, String userId) async {
+  final count = await messageRepo.getTotalUnreadCount(userId: userId, context: context);
+  return Response.json(body: {'totalUnread': count, 'userId': userId});
+}
+```
+
+**2. GET /chat/messages/unread_count/[user_id]/[chat_id].dart**
+```dart
+Future<Response> _getChatUnreadCount(RequestContext context, String userId, String chatId) async {
+  final count = await messageRepo.getChatUnreadCount(userId: userId, chatId: chatId, context: context);
+  return Response.json(body: {'unreadCount': count, 'userId': userId, 'chatId': chatId});
+}
+```
+
+**3. PUT /chat/messages/mark_read/[user_id]/[chat_id].dart**
+```dart
+Future<Response> _markChatAsRead(RequestContext context, String userId, String chatId) async {
+  final success = await messageRepo.markChatAsRead(userId: userId, chatId: chatId, context: context);
+  return Response.json(body: {'success': success});
+}
+```
+
+**4. POST /chat/messages/refresh/unread_counts_[user_id].dart**
+```dart
+Future<Response> _refreshUnreadCounts(RequestContext context, String userId) async {
+  final result = await messageRepo.refreshUnreadCounts(userId: userId, context: context);
+  return Response.json(body: result);
+}
+```
+
+### Frontend Integration Points
+- **Messages Tab**: `ref.watch(totalUnreadCountProvider)` in bottom navigation
+- **Chat Tiles**: `ref.watch(chatUnreadCountProvider(chatId))` in chat list items
+- **Polling Controller**: Coordinates with existing notification polling
+- **Error Handling**: Graceful degradation when API calls fail
+
+## Performance Requirements
+
+### Polling Optimization
+- **Load Distribution**: Stagger message and notification polling by 15 seconds
+- **Error Recovery**: Exponential backoff (30s → 60s → 120s → 300s)
+- **Caching**: 30-second TTL for message counts, 60-second TTL for notifications
+- **Database**: Efficient queries using existing indexes on message_unread_counts
+
+### Scalability Considerations
+- **Batch Operations**: Support marking multiple chats as read
+- **Incremental Sync**: Timestamp-based queries for efficient polling
+- **Background Sync**: Continue polling when app is backgrounded
+- **Offline Queue**: Store mark-as-read actions when network unavailable
+
+## Success Criteria
+
+### Minimum Viable Product (MVP)
+- ✅ Messages tab shows total unread count badge
+- ✅ Chat tiles show unread indicators (dot or count)
+- ✅ Reading messages clears unread status
+- ✅ Polling works without breaking notification system
+
+### Full Feature Complete
+- ✅ All MVP criteria met
+- ✅ Error handling with user feedback
+- ✅ Coordinated polling (no server overload)
+- ✅ Optimistic updates for immediate UI feedback
+- ✅ Data consistency between frontend and backend
+
+### Production Ready
+- ✅ All Full Feature criteria met
+- ✅ Performance monitoring and metrics
+- ✅ Background sync capability
+- ✅ Offline action queuing
+- ✅ Comprehensive error recovery
+
+## Implementation Timeline
+
+### Week 1: Critical Backend Implementation
+- Day 1-2: Implement `/unread_count/[user_id].dart` route
+- Day 3: Test Messages tab badge functionality
+- Day 4-5: Implement `/unread_count/[user_id]/[chat_id].dart` route
+- Day 6-7: Test chat tile indicators
+
+### Week 2: Complete Core Functionality
+- Day 1-2: Implement `/mark_read/[user_id]/[chat_id].dart` route
+- Day 3-4: Implement `/refresh/unread_counts_[user_id].dart` route
+- Day 5-7: End-to-end testing and bug fixes
+
+### Week 3-4: Polish and Optimization
+- Coordinate polling with notification system
+- Add error handling and retry logic
+- Optimize database queries
+- Performance testing
+
+## Risk Assessment
+
+### High Risk: Backend Route Implementation
+- **Impact**: Complete feature failure
+- **Mitigation**: Start with simplest route first (total count)
+- **Fallback**: Frontend shows "0" gracefully if API fails
+
+### Medium Risk: Polling Coordination
+- **Impact**: Server overload or poor performance
+- **Mitigation**: Test polling intervals, monitor server load
+- **Fallback**: Independent polling if coordination fails
+
+### Low Risk: Database Performance
+- **Impact**: Slow response times
+- **Mitigation**: Monitor query performance, add indexes as needed
+- **Fallback**: Increase polling intervals if database struggles
+
+## Immediate Action Plan (Next 48 Hours)
+
+1. **Create backend route file**: `backend/routes/chat/messages/unread_count/[user_id].dart`
+2. **Implement basic total count query**: `SELECT SUM(unread_count) FROM message_unread_counts WHERE user_id = @userId`
+3. **Test with development database** using existing user IDs
+4. **Verify Messages tab badge appears** when unread count > 0
+5. **Document any issues** and iterate quickly
+
+## Dependencies
+
+### Technical Dependencies
+- Existing notification polling system (working)
+- Database schema with message_unread_counts table (ready)
+- Frontend Riverpod state management (implemented)
+- Dart Frog backend framework (ready)
+
+### Data Dependencies
+- User authentication system (working)
+- Chat message system (working)
+- Message read tracking (partially implemented)
+
+## Acceptance Criteria
+
+### User Stories
+1. **As a user**, I want to see a badge on the Messages tab showing total unread messages
+2. **As a user**, I want to see indicators on chat tiles showing which chats have unread messages
+3. **As a user**, I want unread counts to update automatically without manual refresh
+4. **As a user**, I want unread indicators to clear when I read messages
+5. **As a user**, I want the app to remain responsive even if unread count loading fails
+
+### Technical Acceptance
+1. **Backend routes** respond with correct JSON format
+2. **Database queries** execute efficiently (< 100ms)
+3. **Polling coordination** doesn't overwhelm server
+4. **Error handling** provides graceful degradation
+5. **UI updates** reflect accurate unread state
+
+This PRD provides the complete technical and product requirements for implementing the unread messages counter feature in WeirdBrains, with clear success criteria and implementation timeline.

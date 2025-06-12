@@ -1,0 +1,23 @@
+{
+  "crossRepoTaskTemplate": {
+    "id": "template-id",
+    "title": "Cross-Repository Task Title",
+    "description": "Description of the cross-repository task",
+    "masterRepo": "project-nexus",
+    "repositories": {
+      "repo-name": {
+        "taskIds": ["task-1", "task-2"],
+        "status": "pending",
+        "dependencies": [],
+        "assignedAgent": "agent-name",
+        "blockers": []
+      }
+    },
+    "overallStatus": "pending",
+    "criticalPath": [],
+    "priority": "medium",
+    "estimatedDuration": "1 week",
+    "created": "2025-01-01T00:00:00Z",
+    "updated": "2025-01-01T00:00:00Z"
+  }
+}

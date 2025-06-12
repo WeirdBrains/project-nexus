@@ -1,0 +1,223 @@
+<context>
+# Overview
+Mandible is a comprehensive social platform for medical professionals that combines secure messaging, case sharing, and professional networking. **Phase 0 Focus**: Critical messaging system reliability fixes that are blocking user adoption and causing data loss. This phase addresses fundamental infrastructure issues that must be resolved before any feature development can proceed effectively.
+
+# Core Features (Phase 0 - Critical Messaging Fixes)
+## Message Persistence & Reliability (CRITICAL)
+- **Fix Message Storage Bug**: Messages currently sent to wrong endpoint, causing data loss and duplicate chats
+- **Proper Database Schema**: Ensure messages are stored in correct tables with proper relationships
+- **Message Status Tracking**: Implement reliable sending → sent → delivered status system
+- **Error Handling**: Comprehensive error handling and retry logic for failed messages
+
+## Smart Polling System (HIGH PRIORITY)
+- **Basic Polling Infrastructure**: 3-second intervals for active chats, 5-second for chat lists
+- **User Activity Awareness**: Faster polling when user is typing or active
+- **Background Optimization**: Reduced polling when app is backgrounded
+- **Network Awareness**: Adjust polling based on connection quality
+
+## Chat Management UX (HIGH PRIORITY)
+- **Soft Delete Pattern**: Replace hard delete with user visibility control
+- **Graceful Error Handling**: Proper "Chat not found" error states
+- **Group vs One-to-One**: Different deletion behaviors for different chat types
+- **Message History Preservation**: Never lose message data
+
+## Unread Message System (MEDIUM PRIORITY)
+- **Database Schema**: Add read tracking to messages table
+- **Unread Count APIs**: Backend endpoints for unread counts per chat and total
+- **UI Badges**: Unread indicators on chat tiles and navigation tabs
+- **Real-time Updates**: Integrate with existing polling system
+
+# User Experience (Phase 0)
+## Primary User Pain Points Being Addressed
+- **Message Loss**: Users lose messages when switching between devices or refreshing
+- **Duplicate Chats**: Multiple chat instances created for same conversation
+- **Poor Reliability**: Messages fail to send without clear feedback
+- **Confusing Deletion**: Deleting chat removes it for all participants
+
+## Critical User Flows to Fix
+1. **Send Message**: Compose → Send → Reliable Storage → Status Feedback → Recipient Notification
+2. **Message Persistence**: Send Message → Close App → Reopen → Messages Still There
+3. **Chat Deletion**: Delete Chat → Only Hidden for Current User → Other Users Unaffected
+4. **Unread Tracking**: Receive Message → See Unread Badge → Open Chat → Badge Clears
+
+## Success Criteria
+- **Zero Message Loss**: 100% message persistence across sessions
+- **No Duplicate Chats**: One chat per conversation pair/group
+- **Clear Status Feedback**: Users always know if message was sent successfully
+- **Proper Deletion UX**: Deletion follows modern messaging app patterns
+</context>
+<PRD>
+# Technical Architecture (Phase 0 Focus)
+## System Components
+- **Frontend**: Flutter application (@WeirdBrains/mandible/lib/) - Focus on messaging controllers and chat UI
+- **Backend**: Node.js/Express API (@WeirdBrains/backend/routes/chat/) - Fix message endpoints and chat room logic
+- **Database**: PostgreSQL (@WeirdBrains/backend/ddl.sql) - Correct message storage schema and indexing
+- **Polling System**: Smart polling service for real-time updates without WebSocket complexity
+- **Error Handling**: Comprehensive error tracking and user feedback systems
+
+## Critical Data Models (Phase 0)
+- **Messages Table**: Fix storage to correct table, add status tracking fields
+- **Chat Rooms Table**: Prevent duplicate creation, add soft delete support
+- **Message Read Status**: New table for unread tracking per user
+- **User Chat Visibility**: New table for soft delete/hide functionality
+
+## Critical APIs (Phase 0)
+- **POST /chat/messages**: Fix to store messages correctly (not in chat_rooms table)
+- **GET /chat/messages/by_room/{id}**: Add since parameter and read status
+- **PUT /chat/chat_rooms/{id}/hide**: New endpoint for user-specific chat hiding
+- **GET /chat/messages/unread-count/{userId}**: New endpoint for unread counts
+
+## Infrastructure Requirements (Phase 0)
+- **Database Indexes**: Add indexes on chatId, createdAt, userId for message queries
+- **Error Logging**: Enhanced error tracking for message failures
+- **API Response Optimization**: Include hasMore flags and pagination
+- **Message Caching**: Basic caching to reduce redundant polling calls
+
+# Development Roadmap (Phase 0 Only)
+## Phase 0: Critical Messaging Fixes (2-3 weeks)
+
+### Task 1: Fix Message Persistence Bug (CRITICAL - 3-5 days)
+**Root Cause**: Messages sent to wrong endpoint, stored in wrong table
+**Implementation**:
+- Audit and fix `/chat/chat_rooms` endpoint to not store messages
+- Verify `/chat/messages` endpoint stores messages correctly
+- Fix `MessagesController.addMessage()` to only call correct endpoint
+- Remove duplicate chat creation logic from message sending
+- Add comprehensive testing for message persistence
+
+### Task 2: Implement Message Status Tracking (HIGH - 2-3 days)
+**Implementation**:
+- Add status fields to messages table (sending, sent, delivered, failed)
+- Update frontend to show real-time status indicators
+- Implement retry logic for failed messages
+- Add UI feedback for message status changes
+
+### Task 3: Create Smart Polling Infrastructure (HIGH - 3-4 days)
+**Implementation**:
+- Create `PollingService` with configurable intervals
+- Implement user activity tracking for adaptive polling
+- Add background/foreground awareness
+- Create message caching to reduce API calls
+- Integrate with existing MessagesController and ChatController
+
+### Task 4: Fix Chat Deletion UX (HIGH - 4-5 days)
+**Implementation**:
+- Add soft delete columns to chat_rooms table (`deleted_at`, `deleted_by`)
+- Create `user_chat_visibility` table for per-user hiding
+- Replace hard delete with soft delete in backend APIs
+- Add graceful "Chat not found" error handling in frontend
+- Implement different behaviors for one-to-one vs group chats
+
+### Task 5: Implement Unread Message System (MEDIUM - 4-6 days)
+**Implementation**:
+- Add `read_by` JSONB and `read_at` columns to messages table
+- Create `message_read_status` table for detailed tracking
+- Build unread count APIs (`/unread-count/{userId}`, `/unread-count/{userId}/{chatId}`)
+- Add unread badges to chat tiles and Messages tab
+- Integrate with polling system for real-time updates
+
+### Task 6: Backend API Optimizations (MEDIUM - 2-3 days)
+**Implementation**:
+- Add `since` timestamp parameter to message endpoints
+- Implement pagination with `hasMore` flags
+- Add proper database indexes for performance
+- Create batch polling endpoint for multiple chats
+- Optimize response payloads
+
+### Task 7: Error Handling & Monitoring (LOW - 2-3 days)
+**Implementation**:
+- Add comprehensive error logging with Sentry
+- Implement graceful degradation for API failures
+- Add user-friendly error messages
+- Create monitoring for message delivery rates
+- Add performance metrics tracking
+
+### Task 8: Testing & Documentation (LOW - 2-3 days)
+**Implementation**:
+- Write unit tests for message persistence
+- Add integration tests for polling system
+- Test chat deletion scenarios
+- Document API changes and new endpoints
+- Create troubleshooting guide for common issues
+
+# Logical Dependency Chain (Phase 0)
+## Critical Path (Must Complete in Order)
+1. **Task 1 - Message Persistence Fix**: Foundation for all messaging functionality
+2. **Task 2 - Message Status Tracking**: Builds on fixed persistence, provides user feedback
+3. **Task 3 - Smart Polling Infrastructure**: Requires working message system to poll
+
+## Parallel Development (Can Work Simultaneously)
+4. **Task 4 - Chat Deletion UX**: Independent database/API work, can run parallel to polling
+5. **Task 6 - Backend API Optimizations**: Can be done alongside frontend polling work
+
+## Integration Phase (Requires Previous Tasks)
+6. **Task 5 - Unread Message System**: Needs polling system and fixed persistence
+7. **Task 7 - Error Handling & Monitoring**: Integrates with all previous systems
+8. **Task 8 - Testing & Documentation**: Final validation of all components
+
+## Weekly Milestones
+- **Week 1**: Tasks 1-2 (Message persistence + status tracking)
+- **Week 2**: Tasks 3-4 (Polling system + chat deletion)
+- **Week 3**: Tasks 5-6 (Unread system + API optimization)
+- **Week 4**: Tasks 7-8 (Error handling + testing)
+
+# Risks and Mitigations (Phase 0)
+## Technical Challenges
+- **Message Data Loss During Migration**: Backup existing messages before schema changes
+- **Polling Performance Impact**: Start with conservative intervals, monitor CPU/battery usage
+- **Cross-Platform Polling Consistency**: Test polling behavior on web vs mobile extensively
+- **Database Lock Contention**: Use proper transaction isolation for concurrent message writes
+
+## Phase 0 Scope Risks
+- **Scope Creep**: Resist adding new features until messaging reliability is 100%
+- **Over-Engineering**: Focus on simple, working solutions over perfect architecture
+- **Testing Complexity**: Prioritize integration tests over unit tests for critical paths
+- **User Disruption**: Plan maintenance windows for database schema changes
+
+## Resource Constraints
+- **Development Focus**: All development effort on messaging reliability only
+- **Testing Priority**: Manual testing of message persistence across all scenarios
+- **User Communication**: Clear communication about fixes and expected improvements
+- **Rollback Planning**: Ability to revert changes if issues arise
+
+## Success Criteria
+- **Zero Message Loss**: 100% message persistence across all user scenarios
+- **No Duplicate Chats**: Single chat per conversation, verified through testing
+- **Reliable Status Feedback**: Users always know message delivery status
+- **Performance Maintained**: No degradation in app performance with new polling
+
+# Appendix (Phase 0)
+## Critical Implementation Files
+- **Frontend Message Controller**: @WeirdBrains/mandible/lib/views/chat/controller/messages/messages_controller.dart
+- **Frontend Chat Repository**: @WeirdBrains/mandible/lib/repositories/chat/chat_repository_impl.dart
+- **Backend Message Routes**: @WeirdBrains/backend/routes/chat/messages/
+- **Backend Chat Room Routes**: @WeirdBrains/backend/routes/chat/chat_rooms/
+- **Database Schema**: @WeirdBrains/backend/ddl.sql
+
+## Database Schema Changes Required
+```sql
+-- Add message status tracking
+ALTER TABLE messages ADD COLUMN status VARCHAR(20) DEFAULT 'sent';
+ALTER TABLE messages ADD COLUMN read_by JSONB DEFAULT '{}';
+ALTER TABLE messages ADD COLUMN read_at TIMESTAMP NULL;
+
+-- Add soft delete to chat rooms
+ALTER TABLE chat_rooms ADD COLUMN deleted_at TIMESTAMP NULL;
+ALTER TABLE chat_rooms ADD COLUMN deleted_by VARCHAR(255) NULL;
+
+-- Create user chat visibility table
+CREATE TABLE user_chat_visibility (
+  id VARCHAR(255) PRIMARY KEY,
+  user_id VARCHAR(255) NOT NULL,
+  chat_id VARCHAR(255) NOT NULL,
+  hidden_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## Performance Targets (Phase 0)
+- **Message Persistence**: <500ms from send to database storage
+- **Polling Response**: <200ms for message list API calls
+- **Chat List Loading**: <1s for full chat list with unread counts
+- **Error Recovery**: <3s retry interval for failed messages
+</PRD>
